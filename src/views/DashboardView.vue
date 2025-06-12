@@ -28,24 +28,19 @@
 
       <div class="totals-summary">
         <div class="total-item meta-mensal" @click="toggleEditMeta">
-          <span>Meta de Gasto:</span>
+          <span>Meta de Economia:</span>
           <span v-if="!editingMeta" class="value">{{ formatarValor(metaMensal) }}</span>
-          <input
-            v-else
-            type="number"
-            v-model="inputMetaMensal"
-            @blur="salvarMeta"
-            @keyup.enter="salvarMeta"
-            class="meta-input"
-            ref="metaInputRef"
-          />
+          <input v-else type="number" v-model="inputMetaMensal" @blur="salvarMeta" @keyup.enter="salvarMeta"
+            class="meta-input" ref="metaInputRef" />
         </div>
         <div v-if="metaMensal > 0" class="meta-status">
-          <span class="meta-details">Já gastou: {{ formatarValor(Math.abs(totalSaidasMes)) }}</span>
-          <span :class="{ 'positivo': (metaMensal + totalSaidasMes) >= 0, 'negativo': (metaMensal + totalSaidasMes) < 0 }">
-            {{ formatarMetaStatus }}
+          <span class="meta-details">Gastou: {{ formatarValor(Math.abs(totalSaidasMes)) }}</span>
+          <span v-html="formatarMetaStatus"
+            :class="{ 'positivo': (metaMensal - Math.abs(totalSaidasMes)) >= 0, 'negativo': (metaMensal - Math.abs(totalSaidasMes)) < 0 }">
           </span>
+
         </div>
+
         <div class="total-item entradas">
           <span>Entradas do Mês:</span>
           <span class="value positivo">{{ formatarValor(totalEntradasMes) }}</span>
@@ -56,7 +51,8 @@
         </div>
         <div class="total-item saldo">
           <span>Saldo do Mês:</span>
-          <span class="value" :class="{ 'positivo': saldoMes >= 0, 'negativo': saldoMes < 0 }">{{ formatarValor(saldoMes) }}</span>
+          <span class="value" :class="{ 'positivo': saldoMes >= 0, 'negativo': saldoMes < 0 }">{{
+            formatarValor(saldoMes) }}</span>
         </div>
       </div>
 
@@ -90,30 +86,26 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
-// Certifique-se de que `setDoc` e `getDoc` estão importados.
 import { collection, query, where, getDocs, setDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'vue-router';
-
-// Importa Chart.js
 import { Chart, registerables } from 'chart.js';
-Chart.register(...registerables); // Registra todos os componentes padrão do Chart.js
+Chart.register(...registerables);
 
 const auth = getAuth();
 const router = useRouter();
 const erro = ref('');
-
-// Data de referência para navegação
 const anoSelecionado = ref(new Date().getFullYear());
-const mesSelecionado = ref(new Date().getMonth()); // 0 para Janeiro, 11 para Dezembro
+const mesSelecionado = ref(new Date().getMonth());
 
-// Dados carregados para o mês selecionado
+// Referências para armazenar os dados de lançamentos e faturas
 const lancamentosDoMes = ref([]);
-const lancamentosMesAnterior = ref([]); // Para insights
-const lancamentosUltimosMeses = ref({}); // Para o gráfico, estrutura { 'YYYY-MM': [{...}, {...}] }
+const itensFaturaDoMes = ref([]);
+const lancamentosMesAnterior = ref([]);
+const itensFaturaMesAnterior = ref([]); // Novo para dados de faturas do mês anterior
+const lancamentosUltimosMeses = ref({});
 
-// --- Propriedades Computadas para Datas ---
 const inicioDoMes = computed(() => {
   return new Date(anoSelecionado.value, mesSelecionado.value, 1);
 });
@@ -122,50 +114,75 @@ const fimDoMes = computed(() => {
   return new Date(anoSelecionado.value, mesSelecionado.value + 1, 0, 23, 59, 59, 999);
 });
 
-// Nomes dos meses para exibição
 const meses = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
-// Exibe o nome do mês e ano selecionado
 const nomeMesSelecionado = computed(() => {
   return `${meses[mesSelecionado.value]} de ${anoSelecionado.value}`;
 });
 
-// Calcula o total de entradas para o mês selecionado
+// TOTAL DE ENTRADAS (APENAS DE LANÇAMENTOS COM VALOR POSITIVO)
 const totalEntradasMes = computed(() => {
   return lancamentosDoMes.value
     .filter(item => item.valor > 0)
     .reduce((sum, item) => sum + item.valor, 0);
 });
 
-// Calcula o total de saídas para o mês selecionado
+// CORREÇÃO AQUI: TOTAL DE SAÍDAS (LANÇAMENTOS COM VALOR NEGATIVO + ITENS DE FATURA)
 const totalSaidasMes = computed(() => {
-  return lancamentosDoMes.value
-    .filter(item => item.valor < 0)
-    .reduce((sum, item) => sum + item.valor, 0);
+  console.log("Calculando totalSaidasMes...");
+  console.log("lancamentosDoMes:", lancamentosDoMes.value);
+  console.log("itensFaturaDoMes:", itensFaturaDoMes.value);
+
+  const saidasLancamentosAbs = lancamentosDoMes.value
+    .filter(item => {
+      // Log para cada item de lançamento para ver se o filtro está correto
+      // console.log(`  - Lancamento: ${item.descricao || 'N/A'}, Valor: ${item.valor}, isNegative: ${item.valor < 0}`);
+      return item.valor < 0;
+    })
+    .reduce((sum, item) => {
+      const absValue = Math.abs(item.valor);
+      // console.log(`  - Adicionando lancamento abs: ${absValue}`);
+      return sum + absValue;
+    }, 0);
+  console.log("saidasLancamentosAbs (total de lançamentos de saída):", saidasLancamentosAbs);
+
+  const saidasFaturasAbs = itensFaturaDoMes.value
+    .reduce((sum, item) => {
+      // Log para cada item de fatura
+      // console.log(`  - Fatura: ${item.descricao || 'N/A'}, Valor: ${item.valor}`);
+      return sum + item.valor;
+    }, 0); // Soma valores de fatura (já são positivos e representam despesas)
+  console.log("saidasFaturasAbs (total de faturas):", saidasFaturasAbs);
+
+  // Soma os valores absolutos e então os torna negativos para representar o total de saídas
+  const combinedSaidasAbs = saidasLancamentosAbs + saidasFaturasAbs;
+  const finalTotalSaidas = -combinedSaidasAbs;
+  console.log("Combined Saídas Abs (antes da negação):", combinedSaidasAbs);
+  console.log("Final totalSaidasMes:", finalTotalSaidas);
+  return finalTotalSaidas;
 });
 
-// Saldo do Mês
+// SALDO DO MÊS (ENTRADAS - SAÍDAS)
 const saldoMes = computed(() => {
   return totalEntradasMes.value + totalSaidasMes.value;
 });
 
-// --- Meta Mensal ---
 const metaMensal = ref(0);
 const editingMeta = ref(false);
 const inputMetaMensal = ref(0);
-const metaInputRef = ref(null); // Ref para o input da meta
+const metaInputRef = ref(null);
 
 const toggleEditMeta = async () => {
   editingMeta.value = !editingMeta.value;
   if (editingMeta.value) {
     inputMetaMensal.value = metaMensal.value;
-    await nextTick(); // Espera o input ser renderizado
-    if (metaInputRef.value) { // Verifica se a ref existe
+    await nextTick();
+    if (metaInputRef.value) {
       metaInputRef.value.focus();
-      metaInputRef.value.select(); // Seleciona o texto para facilitar a edição
+      metaInputRef.value.select();
     }
   }
 };
@@ -175,32 +192,28 @@ const salvarMeta = async () => {
   const userId = auth.currentUser?.uid;
   if (!userId) {
     erro.value = 'Usuário não autenticado para salvar a meta.';
-    console.error("salvarMeta: NENHUM USUÁRIO AUTENTICADO!"); // Log de depuração
+    console.error("salvarMeta: NENHUM USUÁRIO AUTENTICADO!");
     return;
   }
   const novaMeta = Number(inputMetaMensal.value);
   if (isNaN(novaMeta) || novaMeta < 0) {
     erro.value = 'Valor de meta inválido. A meta deve ser um número positivo.';
-    inputMetaMensal.value = metaMensal.value; // Volta ao valor anterior
-    return;
+    inputMetaMensal.value = metaMensal.value;
   }
 
-  // Define o ID do documento da meta como 'ano-mes' (ex: '2025-05')
-  const metaId = `${anoSelecionado.value}-${String(mesSelecionado.value + 1).padStart(2, '0')}`; // +1 porque mesSelecionado é 0-indexado
+  const metaId = `${anoSelecionado.value}-${String(mesSelecionado.value + 1).padStart(2, '0')}`;
   try {
-    // Caminho da coleção: 'metas' -> 'userId' -> 'mensal' -> 'metaId'
-    // Ex: metas/algumUIDDoUsuario/mensal/2025-06
     const metaDocRef = doc(db, 'metas', userId, 'mensal', metaId);
     await setDoc(metaDocRef, {
       valor: novaMeta,
       ano: anoSelecionado.value,
-      mes: mesSelecionado.value + 1, // Salva o mês como 1-indexado
-      userId: userId, // ESSENCIAL para as regras de segurança
+      mes: mesSelecionado.value + 1,
+      userId: userId,
       ultimaAtualizacao: new Date()
     });
     metaMensal.value = novaMeta;
-    erro.value = ''; // Limpa erro se houver
-    console.log("Meta salva com sucesso para:", userId, "Mês:", metaId); // Log de sucesso
+    erro.value = '';
+    console.log("Meta salva com sucesso para:", userId, "Mês:", metaId);
   } catch (e) {
     erro.value = 'Erro ao salvar a meta: ' + e.message;
     console.error('Erro ao salvar meta:', e);
@@ -209,21 +222,20 @@ const salvarMeta = async () => {
 
 const carregarMetaMensal = async (userId) => {
   if (!userId) {
-    console.error("carregarMetaMensal: NENHUM USUÁRIO AUTENTICADO!"); // Log de depuração
+    console.error("carregarMetaMensal: NENHUM USUÁRIO AUTENTICADO!");
     metaMensal.value = 0;
     return;
   }
-  const metaId = `${anoSelecionado.value}-${String(mesSelecionado.value + 1).padStart(2, '0')}`; // +1 porque mesSelecionado é 0-indexado
+  const metaId = `${anoSelecionado.value}-${String(mesSelecionado.value + 1).padStart(2, '0')}`;
   try {
-    // Caminho da coleção: 'metas' -> 'userId' -> 'mensal' -> 'metaId'
     const metaDocRef = doc(db, 'metas', userId, 'mensal', metaId);
     const metaDoc = await getDoc(metaDocRef);
     if (metaDoc.exists()) {
       metaMensal.value = metaDoc.data().valor || 0;
-      console.log("Meta carregada:", metaMensal.value, "para:", userId, "Mês:", metaId); // Log de sucesso
+      console.log("Meta carregada:", metaMensal.value, "para:", userId, "Mês:", metaId);
     } else {
-      metaMensal.value = 0; // Nenhuma meta definida para este mês
-      console.log("Nenhuma meta encontrada para:", userId, "Mês:", metaId); // Log de informação
+      metaMensal.value = 0;
+      console.log("Nenhuma meta encontrada para:", userId, "Mês:", metaId);
     }
     erro.value = '';
   } catch (e) {
@@ -237,53 +249,75 @@ const formatarMetaStatus = computed(() => {
   const gastoAtual = Math.abs(totalSaidasMes.value);
   const restante = metaMensal.value - gastoAtual;
 
-  if (metaMensal.value <= 0) return ''; // Não exibe status se não há meta
+  if (metaMensal.value <= 0) return '';
 
   if (restante >= 0) {
-    return `Faltam: ${formatarValor(restante)}`;
+    return `${formatarValor(restante)} positivo.`;
   } else {
-    return `Ultrapassou: ${formatarValor(Math.abs(restante))}`;
+    return `${formatarValor(Math.abs(restante))} negativo.`;
   }
 });
 
-
-// --- DADOS DAS CATEGORIAS ---
+// Categorias padronizadas com 'id' e 'nome'
 const categoriasDisponiveis = ref([
-  { nome: 'Salário', icon: 'payments' },
-  { nome: 'Essencial', icon: 'home' },
-  { nome: 'Alimentação', icon: 'restaurant' },
-  { nome: 'Lazer', icon: 'movie_filter' },
-  { nome: 'Transporte', icon: 'commute' },
-  { nome: 'Moradia', icon: 'apartment' },
-  { nome: 'Saúde', icon: 'healing' },
-  { nome: 'Educação', icon: 'school' },
-  { nome: 'Beleza', icon: 'face' },
-  { nome: 'Roupas', icon: 'checkroom' },
-  { nome: 'Assinaturas', icon: 'subscriptions' },
-  { nome: 'Doações', icon: 'volunteer_activism' },
-  { nome: 'Pets', icon: 'pets' },
-  { nome: 'Imprevistos', icon: 'crisis_alert' },
-  { nome: 'Investimentos', icon: 'trending_up' },
-  { nome: 'Outros', icon: 'category' }
+  { id: 'salario', nome: 'Salário', icon: 'payments' },
+  { id: 'essencial', nome: 'Essencial', icon: 'home' },
+  { id: 'alimentacao', nome: 'Alimentação', icon: 'restaurant' },
+  { id: 'lazer', nome: 'Lazer', icon: 'movie_filter' },
+  { id: 'transporte', nome: 'Transporte', icon: 'commute' },
+  { id: 'moradia', nome: 'Moradia', icon: 'apartment' },
+  { id: 'saude', nome: 'Saúde', icon: 'healing' },
+  { id: 'educacao', nome: 'Educação', icon: 'school' },
+  { id: 'beleza', nome: 'Beleza', icon: 'face' },
+  { id: 'roupas', nome: 'Roupas', icon: 'checkroom' },
+  { id: 'assinaturas', nome: 'Assinaturas', icon: 'subscriptions' },
+  { id: 'doacoes', nome: 'Doações', icon: 'volunteer_activism' },
+  { id: 'pets', nome: 'Pets', icon: 'pets' },
+  { id: 'imprevistos', nome: 'Imprevistos', icon: 'crisis_alert' },
+  { id: 'investimentos', nome: 'Investimentos', icon: 'trending_up' },
+  { id: 'outros', nome: 'Outros', icon: 'category' }
 ]);
 
-// Função para obter o ícone da categoria
-const getCategoryIcon = (categoryName) => {
-  const category = categoriasDisponiveis.value.find(cat => cat.nome === categoryName);
+// Helper para obter o nome da categoria pelo ID
+const getCategoryNameById = (categoryId) => {
+  const category = categoriasDisponiveis.value.find(cat => cat.id === categoryId);
+  return category ? category.nome : 'Outros';
+};
+
+// Helper para obter o ícone da categoria (compatível com nome ou ID)
+const getCategoryIcon = (categoryIdentifier) => {
+  // Tenta encontrar pelo ID primeiro (para itens de fatura)
+  let category = categoriasDisponiveis.value.find(cat => cat.id === categoryIdentifier);
+  if (category) return category.icon;
+
+  // Se não encontrado pelo ID, tenta encontrar pelo nome (para lançamentos antigos)
+  category = categoriasDisponiveis.value.find(cat => cat.nome === categoryIdentifier);
   return category ? category.icon : 'category';
 };
 
-// Calcula gastos por categoria usando o campo 'categoria'
+// GASTOS POR CATEGORIA (COMBINANDO LANÇAMENTOS E ITENS DE FATURA)
 const gastosPorCategoria = computed(() => {
   const categorias = {};
+
+  // Processar lançamentos (apenas saídas)
   lancamentosDoMes.value
-    .filter(item => item.valor < 0) // Apenas saídas
+    .filter(item => item.valor < 0)
     .forEach(item => {
-      const nomeCategoria = item.categoria || 'Outros';
+      const nomeCategoria = item.categoria || 'Outros'; // 'categoria' para lançamentos
       if (!categorias[nomeCategoria]) {
         categorias[nomeCategoria] = 0;
       }
       categorias[nomeCategoria] += Math.abs(item.valor);
+    });
+
+  // Processar itens de fatura
+  itensFaturaDoMes.value
+    .forEach(item => {
+      const nomeCategoria = getCategoryNameById(item.categoriaId); // Converte 'categoriaId' para nome
+      if (!categorias[nomeCategoria]) {
+        categorias[nomeCategoria] = 0;
+      }
+      categorias[nomeCategoria] += Math.abs(item.valor); // Itens de fatura são despesas
     });
 
   return Object.keys(categorias)
@@ -291,17 +325,20 @@ const gastosPorCategoria = computed(() => {
     .sort((a, b) => b.valor - a.valor);
 });
 
-// --- Insights Automáticos ---
+// INSIGHTS (AGORA BASEADOS NO totalSaidasMes COMBINADO)
 const insights = computed(() => {
   const insightsList = [];
-  const totalSaidasMesAtual = Math.abs(totalSaidasMes.value);
+  const totalSaidasMesAtual = Math.abs(totalSaidasMes.value); // Já inclui lançamentos e faturas
+
+  // Calcula o total de saídas do mês anterior (lançamentos + faturas)
   const totalSaidasMesAnterior = Math.abs(
     lancamentosMesAnterior.value
       .filter(item => item.valor < 0)
-      .reduce((sum, item) => sum + item.valor, 0)
+      .reduce((sum, item) => sum + Math.abs(item.valor), 0) // Soma o valor absoluto dos lançamentos negativos
+    +
+    itensFaturaMesAnterior.value.reduce((sum, item) => sum + item.valor, 0) // Soma os valores das faturas
   );
 
-  // Comparação com o mês anterior
   if (totalSaidasMesAnterior > 0) {
     const diferenca = Math.abs(totalSaidasMesAtual - totalSaidasMesAnterior);
     if (totalSaidasMesAtual < totalSaidasMesAnterior) {
@@ -311,7 +348,7 @@ const insights = computed(() => {
     }
   }
 
-  // Comparação de categorias (exemplo: Alimentação vs Transporte)
+  // Insights baseados em categorias combinadas
   const gastosPorCategoriaMesAtual = {};
   gastosPorCategoria.value.forEach(cat => {
     gastosPorCategoriaMesAtual[cat.nome] = cat.valor;
@@ -324,26 +361,20 @@ const insights = computed(() => {
     insightsList.push(`Você gastou mais em Transporte (${formatarValor(gastoTransporte)}) do que em Alimentação (${formatarValor(gastoAlimentacao)}) este mês.`);
   }
 
-  // Adicione mais insights aqui conforme a necessidade
-
   return insightsList;
 });
 
-
-// --- Funções de Carregamento de Dados ---
-
-// Helper para obter os limites de data de um mês específico
 const getMonthDateRange = (year, month) => {
   const start = new Date(year, month, 1);
   const end = new Date(year, month + 1, 0, 23, 59, 59, 999);
   return { start, end };
 };
 
-// Carrega lançamentos para um período específico
-const carregarLancamentosPorPeriodo = async (userId, start, end) => {
+// NOVA FUNÇÃO: Carregar dados de uma coleção por período
+const carregarCollectionPorPeriodo = async (userId, collectionName, start, end) => {
   try {
     const q = query(
-      collection(db, 'lancamentos'),
+      collection(db, collectionName),
       where('userId', '==', userId),
       where('data', '>=', start),
       where('data', '<=', end)
@@ -351,27 +382,38 @@ const carregarLancamentosPorPeriodo = async (userId, start, end) => {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (e) {
-    console.error('Erro ao carregar lançamentos por período:', e);
+    console.error(`Erro ao carregar ${collectionName} por período:`, e);
     return [];
   }
 };
 
+// Carregamento principal de todos os dados para o dashboard
 const carregarDadosDoDashboard = async (userId) => {
   erro.value = '';
   try {
-    // Carrega lançamentos do mês atual
-    lancamentosDoMes.value = await carregarLancamentosPorPeriodo(userId, inicioDoMes.value, fimDoMes.value);
+    // Mês atual
+    console.log("Buscando dados para o mês atual...");
+    lancamentosDoMes.value = await carregarCollectionPorPeriodo(userId, 'lancamentos', inicioDoMes.value, fimDoMes.value);
+    console.log("Lancamentos do Mês buscados:", lancamentosDoMes.value);
+    itensFaturaDoMes.value = await carregarCollectionPorPeriodo(userId, 'itensFatura', inicioDoMes.value, fimDoMes.value);
+    console.log("Itens de Fatura do Mês buscados:", itensFaturaDoMes.value);
 
-    // Carrega lançamentos do mês anterior para insights
+    // Mês anterior (para insights)
+    console.log("Buscando dados para o mês anterior...");
     const dataMesAnterior = new Date(anoSelecionado.value, mesSelecionado.value - 1, 1);
     const { start: startMesAnterior, end: endMesAnterior } = getMonthDateRange(dataMesAnterior.getFullYear(), dataMesAnterior.getMonth());
-    lancamentosMesAnterior.value = await carregarLancamentosPorPeriodo(userId, startMesAnterior, endMesAnterior);
+    lancamentosMesAnterior.value = await carregarCollectionPorPeriodo(userId, 'lancamentos', startMesAnterior, endMesAnterior);
+    itensFaturaMesAnterior.value = await carregarCollectionPorPeriodo(userId, 'itensFatura', startMesAnterior, endMesAnterior);
+    console.log("Lancamentos do Mês Anterior buscados:", lancamentosMesAnterior.value);
+    console.log("Itens de Fatura do Mês Anterior buscados:", itensFaturaMesAnterior.value);
 
-    // Carrega meta mensal
+
     await carregarMetaMensal(userId);
 
-    // Carrega dados para o gráfico (últimos 4 meses)
+    // Dados históricos para o gráfico (últimos 4 meses)
+    console.log("Buscando dados históricos para o gráfico...");
     lancamentosUltimosMeses.value = {};
+    const itensFaturaUltimosMesesParaGrafico = {};
     for (let i = 0; i < 4; i++) {
       let currentMonth = mesSelecionado.value - i;
       let currentYear = anoSelecionado.value;
@@ -380,43 +422,46 @@ const carregarDadosDoDashboard = async (userId) => {
         currentYear--;
       }
       const { start, end } = getMonthDateRange(currentYear, currentMonth);
-      const key = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`; // Formato YYYY-MM
-      lancamentosUltimosMeses.value[key] = await carregarLancamentosPorPeriodo(userId, start, end);
+      const key = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+      lancamentosUltimosMeses.value[key] = await carregarCollectionPorPeriodo(userId, 'lancamentos', start, end);
+      itensFaturaUltimosMesesParaGrafico[key] = await carregarCollectionPorPeriodo(userId, 'itensFatura', start, end);
     }
-    await nextTick(); // Garante que o DOM foi atualizado antes de tentar renderizar o gráfico
-    renderChart(); // Renderiza o gráfico após carregar todos os dados
+    console.log("Lancamentos dos Últimos Meses (para gráfico) buscados:", lancamentosUltimosMeses.value);
+    console.log("Itens de Fatura dos Últimos Meses (para gráfico) buscados:", itensFaturaUltimosMesesParaGrafico);
+
+
+    await nextTick();
+    renderChart(itensFaturaUltimosMesesParaGrafico); // Passa os dados de faturas para o gráfico
   } catch (e) {
     erro.value = 'Erro ao carregar dados do dashboard.';
     console.error('Erro ao carregar dashboard:', e);
   }
 };
 
+let monthlyEvolutionChartInstance = null;
 
-// --- Gráfico de Evolução ---
-let monthlyEvolutionChartInstance = null; // Variável para armazenar a instância do gráfico
+// CORREÇÃO: `chartDataAvailable` agora é uma `ref` simples, atualizada pela função `renderChart`.
+const chartDataAvailable = ref(false);
 
-const chartDataAvailable = computed(() => {
-  // Verifica se há pelo menos um mês com dados para o gráfico
-  return Object.values(lancamentosUltimosMeses.value).some(arr => arr.length > 0);
-});
 
-const renderChart = () => {
+const renderChart = (itensFaturaUltimosMesesParaGrafico) => {
   if (monthlyEvolutionChartInstance) {
-    monthlyEvolutionChartInstance.destroy(); // Destrói a instância anterior se existir
+    monthlyEvolutionChartInstance.destroy();
   }
 
   const ctx = document.getElementById('monthlyEvolutionChart');
-  if (!ctx || !chartDataAvailable.value) {
-    return; // Não renderiza se o canvas não existe ou não há dados
+  if (!ctx) {
+    console.warn("Elemento canvas 'monthlyEvolutionChart' não encontrado.");
+    chartDataAvailable.value = false; // Define como falso se o canvas não for encontrado
+    return;
   }
 
   const labels = [];
   const entradasData = [];
   const saidasData = [];
 
-  // Pega os últimos 4 meses a partir do mês selecionado
   const dataPontos = [];
-  for (let i = 3; i >= 0; i--) { // Começa do mais antigo para o mais recente
+  for (let i = 3; i >= 0; i--) {
     let currentMonth = mesSelecionado.value - i;
     let currentYear = anoSelecionado.value;
     if (currentMonth < 0) {
@@ -428,37 +473,52 @@ const renderChart = () => {
 
   dataPontos.forEach(({ year, month }) => {
     const key = `${year}-${String(month + 1).padStart(2, '0')}`;
-    const lancamentosDoMesHistorico = lancamentosUltimosMeses.value[key] || [];
+    const lancamentosHistorico = lancamentosUltimosMeses.value[key] || [];
+    const faturasHistorico = itensFaturaUltimosMesesParaGrafico[key] || []; // Dados de faturas históricas
 
-    const totalEntradas = lancamentosDoMesHistorico
+    const totalEntradas = lancamentosHistorico
       .filter(item => item.valor > 0)
       .reduce((sum, item) => sum + item.valor, 0);
 
-    const totalSaidas = lancamentosDoMesHistorico
+    const totalSaidasLancamentos = lancamentosHistorico
       .filter(item => item.valor < 0)
-      .reduce((sum, item) => sum + Math.abs(item.valor), 0); // Abs para o gráfico de barras
+      .reduce((sum, item) => sum + Math.abs(item.valor), 0); // Soma o valor absoluto das saídas
 
-    labels.push(`${meses[month].substring(0, 3)}/${String(year).slice(2)}`); // Jan/25
+    const totalSaidasFaturas = faturasHistorico
+      .reduce((sum, item) => sum + item.valor, 0); // Soma o valor das faturas (que são despesas)
+
+    const totalSaidas = totalSaidasLancamentos + totalSaidasFaturas;
+
+    labels.push(`${meses[month].substring(0, 3)}/${String(year).slice(2)}`);
     entradasData.push(totalEntradas);
     saidasData.push(totalSaidas);
   });
 
+  // Verifica se há dados para exibir no gráfico antes de renderizar
+  const chartHasData = entradasData.some(val => val > 0) || saidasData.some(val => val > 0);
+  if (!chartHasData) {
+    console.log("Dados insuficientes para o gráfico (últimos 4 meses).");
+    chartDataAvailable.value = false;
+    return;
+  }
+  chartDataAvailable.value = true; // Define como verdadeiro se há dados
+
   monthlyEvolutionChartInstance = new Chart(ctx, {
-    type: 'bar', // Pode ser 'line' também
+    type: 'bar',
     data: {
       labels: labels,
       datasets: [
         {
           label: 'Entradas',
           data: entradasData,
-          backgroundColor: 'rgba(40, 167, 69, 0.7)', // Verde
+          backgroundColor: 'rgba(40, 167, 69, 0.7)',
           borderColor: 'rgba(40, 167, 69, 1)',
           borderWidth: 1
         },
         {
           label: 'Saídas',
           data: saidasData,
-          backgroundColor: 'rgba(220, 53, 69, 0.7)', // Vermelho
+          backgroundColor: 'rgba(220, 53, 69, 0.7)',
           borderColor: 'rgba(220, 53, 69, 1)',
           borderWidth: 1
         }
@@ -474,7 +534,7 @@ const renderChart = () => {
         },
         tooltip: {
           callbacks: {
-            label: function(context) {
+            label: function (context) {
               let label = context.dataset.label || '';
               if (label) {
                 label += ': ';
@@ -495,7 +555,7 @@ const renderChart = () => {
             text: 'Valor (R$)'
           },
           ticks: {
-            callback: function(value) {
+            callback: function (value) {
               return formatarValor(value);
             }
           }
@@ -505,8 +565,6 @@ const renderChart = () => {
   });
 };
 
-
-// --- Funções de Navegação de Mês ---
 const avancarMes = () => {
   if (mesSelecionado.value === 11) {
     mesSelecionado.value = 0;
@@ -525,20 +583,15 @@ const voltarMes = () => {
   }
 };
 
-// --- Função de Navegação ---
 const voltar = () => {
   router.back();
 };
 
-// --- Funções de Formatação ---
 const formatarValor = (valor) => {
   if (typeof valor !== 'number' || isNaN(valor)) return 'R$ 0,00';
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
 
-// --- Watchers e Lifecycle Hooks ---
-
-// Observa mudanças no mês ou ano selecionado para recarregar todos os dados do dashboard
 watch([mesSelecionado, anoSelecionado], async () => {
   const userId = auth.currentUser?.uid;
   if (userId) {
@@ -549,11 +602,11 @@ watch([mesSelecionado, anoSelecionado], async () => {
 onMounted(() => {
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      console.log("onAuthStateChanged: Usuário logado, UID:", user.uid); // Log de depuração
+      console.log("onAuthStateChanged: Usuário logado, UID:", user.uid);
       await carregarDadosDoDashboard(user.uid);
     } else {
       erro.value = 'Usuário não autenticado. Redirecionando para o login.';
-      console.error("onAuthStateChanged: NENHUM USUÁRIO LOGADO!"); // Log de depuração
+      console.error("onAuthStateChanged: NENHUM USUÁRIO LOGADO!");
       router.push('/');
     }
   });
@@ -561,13 +614,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/*
- * IMPORTANTE: Para que os ícones do Material Design apareçam,
- * certifique-se de que a seguinte linha esteja no <head> do seu `public/index.html`:
- * <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
- */
-
-/* Estilos Globais/Reset Simplificado */
 body,
 html,
 #app {
@@ -601,11 +647,10 @@ html,
   margin: 0.8rem 0;
 }
 
-/* Ajustes para o Botão de Voltar no Título */
 .title-row {
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* Alinha o botão de voltar à esquerda */
+  justify-content: flex-start;
   gap: 6px;
   margin-bottom: 20px;
 }
@@ -614,18 +659,18 @@ html,
   font-size: 1.8rem;
   font-weight: 700;
   color: #333;
-  flex-grow: 1; /* Permite que o título ocupe o espaço restante */
-  text-align: center; /* Centraliza o texto do título */
-  transform: translateX(-18px); /* Ajusta para centralizar o título levando em conta o botão */
+  flex-grow: 1;
+  text-align: center;
+  transform: translateX(-18px);
 }
 
 .back-button {
-  display: flex; /* Garante que o botão seja exibido */
+  display: flex;
   border-radius: 50%;
   padding: 3px 8px;
   min-width: 30px;
   min-height: 30px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   align-items: center;
   justify-content: center;
   background-color: #e0e0e0;
@@ -639,7 +684,6 @@ html,
   background-color: #d0d0d0;
 }
 
-/* --- Navegação de Mês --- */
 .month-navigation {
   display: flex;
   align-items: center;
@@ -681,7 +725,6 @@ html,
   color: #333;
 }
 
-/* --- Seção de Resumo de Totais (Entradas, Saídas, Saldo) --- */
 .totals-summary {
   display: flex;
   flex-direction: column;
@@ -692,7 +735,7 @@ html,
   border: 1px solid #eee;
   border-radius: 8px;
   background-color: #fdfdfd;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .total-item {
@@ -723,21 +766,25 @@ html,
   color: #dc3545;
 }
 
-.total-item .value.positivo { color: #28a745; }
-.total-item .value.negativo { color: #dc3545; }
+.total-item .value.positivo {
+  color: #28a745;
+}
 
-/* --- Meta Mensal --- */
+.total-item .value.negativo {
+  color: #dc3545;
+}
+
 .total-item.meta-mensal {
   font-weight: 600;
-  color: #007bff; /* Cor azul para a meta */
-  cursor: pointer; /* Indica que é clicável */
-  border-bottom: 1px dashed #eee; /* Linha para separar da próxima item */
+  color: #007bff;
+  cursor: pointer;
+  border-bottom: 1px dashed #eee;
   padding-bottom: 8px;
   margin-bottom: 8px;
 }
 
 .total-item.meta-mensal .value {
-  color: #007bff; /* Mantém a cor azul para o valor da meta */
+  color: #007bff;
 }
 
 .meta-input {
@@ -746,7 +793,7 @@ html,
   padding: 4px 8px;
   font-size: 1.1rem;
   font-weight: 700;
-  width: 120px; /* Ajuste a largura conforme necessário */
+  width: 120px;
   text-align: right;
   color: #007bff;
 }
@@ -755,19 +802,27 @@ html,
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   color: #666;
   padding: 4px 0 10px;
   border-bottom: 1px dashed #eee;
   margin-bottom: 8px;
 }
 
-.meta-status .positivo { color: #28a745; font-weight: 600; }
-.meta-status .negativo { color: #dc3545; font-weight: 600; }
-.meta-status .meta-details { font-weight: 500; }
+.meta-status .positivo {
+  color: #28a745;
+  font-weight: 600;
+}
 
+.meta-status .negativo {
+  color: #dc3545;
+  font-weight: 600;
+}
 
-/* --- Estilos Gerais de Botões --- */
+.meta-status .meta-details {
+  font-weight: 500;
+}
+
 .btn {
   padding: 8px 20px;
   font-size: 0.9rem;
@@ -813,7 +868,6 @@ html,
   background-color: rgba(0, 123, 255, 0.12);
 }
 
-/* --- Títulos de Seção --- */
 .section-title {
   font-size: 1.25rem;
   font-weight: 600;
@@ -830,16 +884,15 @@ html,
   text-align: center;
 }
 
-/* --- Insights Container --- */
 .insights-container {
   width: 90%;
   padding: 10px 15px;
   border: 1px solid #eee;
   border-radius: 8px;
   background-color: #fdfdfd;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   margin-bottom: 16px;
-  text-align: left; /* Insights podem ser justificados à esquerda */
+  text-align: left;
 }
 
 .insight-item {
@@ -848,12 +901,11 @@ html,
   margin-bottom: 5px;
   line-height: 1.4;
 }
+
 .insight-item:last-child {
   margin-bottom: 0;
 }
 
-
-/* --- Gastos por Categoria (Lista com Ícones) --- */
 .category-list-container {
   width: 100%;
   max-height: 250px;
@@ -870,18 +922,18 @@ html,
   margin-bottom: 5px;
   background-color: #f8f9fa;
   border-radius: 6px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .category-info {
   display: flex;
   align-items: center;
-  gap: 6px; /* Espaçamento entre ícone e nome da categoria */
+  gap: 6px;
 }
 
 .category-icon {
-  font-size: 1.2rem; /* Tamanho do ícone */
-  color: #007bff; /* Cor do ícone */
+  font-size: 1.2rem;
+  color: #007bff;
 }
 
 .category-name {
@@ -893,19 +945,17 @@ html,
 .category-value {
   font-size: 0.95em;
   font-weight: 600;
-  color: #dc3545; /* Cor vermelha para gastos */
+  color: #dc3545;
 }
 
-/* --- Gráfico de Evolução --- */
 .chart-container {
   position: relative;
   width: 100%;
-  max-width: 340px; /* Ajuste para o tamanho do card */
-  height: 200px; /* Altura fixa para o gráfico */
+  max-width: 340px;
+  height: 200px;
   margin: 15px auto 20px;
 }
 
-/* --- Mensagens e Divisores --- */
 .no-items-message {
   padding: 14px;
   text-align: center;

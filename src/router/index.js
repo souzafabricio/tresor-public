@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { getAuth, onAuthStateChanged } from 'firebase/auth'
+import { getAuth } from 'firebase/auth'
 import LoginView from '../views/LoginView.vue'
 
 const routes = [
@@ -68,28 +68,29 @@ const router = createRouter({
   routes
 })
 
-let isAuthChecked = false
+// Aguarda até que o Firebase saiba se há um usuário logado
+function waitForAuthReady() {
+  const auth = getAuth()
+  return new Promise((resolve) => {
+    const unsubscribe = auth.onAuthStateChanged(() => {
+      unsubscribe()
+      resolve()
+    })
+  })
+}
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const auth = getAuth()
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
 
-  if (isAuthChecked) {
-    const user = auth.currentUser
-    if (requiresAuth && !user) {
-      next({ name: 'Login' })
-    } else {
-      next()
-    }
+  await waitForAuthReady()
+
+  const user = auth.currentUser
+
+  if (requiresAuth && !user) {
+    next({ name: 'Login' })
   } else {
-    onAuthStateChanged(auth, user => {
-      isAuthChecked = true
-      if (requiresAuth && !user) {
-        next({ name: 'Login' })
-      } else {
-        next()
-      }
-    })
+    next()
   }
 })
 

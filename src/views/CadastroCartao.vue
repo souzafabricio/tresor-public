@@ -2,12 +2,10 @@
   <div class="main-container">
     <div class="content-card">
 
-      <!-- Cabeçalho Padronizado -->
       <div class="title-row">
         <h1 class="title">Novo Cartão</h1>
       </div>
       
-      <!-- Campos de Formulário Estilizados -->
       <div class="input-container">
         <input v-model="banco" type="text" id="banco" class="text-field" placeholder=" " />
         <label for="banco" class="label-text">Banco (ex: Bradesco)</label>
@@ -23,11 +21,9 @@
         <label for="vencimento" class="label-text">Dia do vencimento</label>
       </div>
       
-      <!-- Mensagens de Feedback -->
       <p v-if="erro" class="error-message">{{ erro }}</p>
       <p v-if="sucesso" class="success-message">Cartão cadastrado com sucesso!</p>
 
-      <!-- Botões de Ação -->
       <div class="form-actions">
         <button @click="voltar" class="btn back-button">Voltar</button>
         <button @click="cadastrarCartao" class="btn filled-button">Cadastrar</button>
@@ -62,7 +58,6 @@ const cadastrarCartao = async () => {
         return;
     }
     
-    // Validação simples para dias
     if (fechamento.value < 1 || fechamento.value > 31 || vencimento.value < 1 || vencimento.value > 31) {
         erro.value = 'Os dias devem estar entre 1 e 31.';
         return;
@@ -84,7 +79,6 @@ const cadastrarCartao = async () => {
         });
 
         sucesso.value = true;
-        // Redireciona para a lista de cartões após um breve delay para o usuário ver a mensagem
         setTimeout(() => {
             router.push('/CartoesView');
         }, 800);
@@ -101,12 +95,6 @@ const voltar = () => {
 </script>
 
 <style scoped>
-/*
- * IMPORTANTE: Certifique-se de que a fonte de ícones do Material Design
- * está no <head> do seu `public/index.html`:
- * <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
- */
-
 .main-container {
   display: flex;
   flex-direction: column;
@@ -169,7 +157,6 @@ const voltar = () => {
 
 }
 
-/* --- Estilos de Formulário (Inputs, Selects) --- */
 .input-container {
   position: relative;
   margin-bottom: 24px;
@@ -204,7 +191,6 @@ const voltar = () => {
   font-size: 1rem;
 }
 
-/* Efeito de label flutuante */
 .text-field:focus + .label-text,
 .text-field:not(:placeholder-shown) + .label-text {
   top: 4px;
@@ -212,7 +198,6 @@ const voltar = () => {
   color: #007bff;
 }
 
-/* Ações do Formulário (Botões) */
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -221,7 +206,6 @@ const voltar = () => {
   width: 100%;
 }
 
-/* Mensagens de Erro e Sucesso */
 .error-message {
   color: #dc3545;
   margin-top: 1rem;
@@ -238,13 +222,11 @@ const voltar = () => {
   text-align: center;
 }
 
-/* --- Estilos Gerais de Botões --- */
 .btn {
   padding: 10px 24px;
   font-size: 1rem;
   font-weight: 500;
   border: none;
-  /* MODIFICADO: Arredondamento dos botões */
   border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;

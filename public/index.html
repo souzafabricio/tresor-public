@@ -15,12 +15,31 @@
 </head>
 
 <body>
-  <noscript>
-    <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled.
-        Please enable it to continue.</strong>
-  </noscript>
-  <div id="app"></div>
-  <!-- built files will be auto injected -->
-</body>
+  <div id="splash-screen" style="
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  ">
+    <img src="assets/logo-loading.png" alt="Carregando..." style="width: 120px; animation: pulse 1.5s ease-in-out infinite;" />
+  </div>
 
+  <style>
+    @keyframes pulse {
+      0%,
+      100% {
+        opacity: 0.5;
+        transform: scale(2.55);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(2.75);
+      }
+    }
+  </style>
+  <div id="app"></div>
+</body>
 </html>

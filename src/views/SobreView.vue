@@ -74,9 +74,7 @@ ul {
     color: var(--md-sys-color-on-surface-variant);
     border-radius: 10px;
     width: 20%;
-    /* Tamanho fixo */
     height: 40px;
-    /* Tamanho fixo */
     font-size: 1rem;
     align-items: center;
     justify-content: center;
@@ -93,7 +91,6 @@ ul {
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Centraliza horizontalmente */
     gap: 10px;
     margin-top: 0.2rem;
     width: 100%;
@@ -110,7 +107,6 @@ ul {
     text-decoration: none;
     transition: color 0.2s;
     margin: 0;
-    /* Remove margens extras */
 }
 
 .contato-link .material-icons {

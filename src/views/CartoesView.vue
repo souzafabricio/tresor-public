@@ -73,13 +73,10 @@ const erro = ref('');
 const cartoes = ref([]);
 const cartaoParaExcluir = ref(null);
 
-/**
- * Carrega os cartões do usuário logado a partir do Firestore.
- */
 const carregarCartoes = async () => {
   try {
     if (!auth.currentUser) {
-      router.push('/'); // Redireciona para o login se não estiver autenticado
+      router.push('/');
       return;
     }
     const q = query(collection(db, 'cartoes'), where('userId', '==', auth.currentUser.uid));
@@ -92,23 +89,16 @@ const carregarCartoes = async () => {
 };
 
 /**
- * Abre o modal de confirmação para excluir um cartão.
- * @param {object} cartao - O objeto do cartão a ser excluído.
+ * @param {object} cartao -
  */
 const confirmarExclusao = (cartao) => {
   cartaoParaExcluir.value = cartao;
 };
 
-/**
- * Fecha o modal de confirmação.
- */
 const cancelarExclusao = () => {
   cartaoParaExcluir.value = null;
 };
 
-/**
- * Exclui o cartão e todos os seus dados associados (faturas e itens).
- */
 const excluirCartao = async () => {
   if (!cartaoParaExcluir.value) return;
 
@@ -116,30 +106,26 @@ const excluirCartao = async () => {
   try {
     const userId = auth.currentUser.uid;
 
-    // Encontra todas as faturas associadas ao cartão
     const faturasSnap = await getDocs(
       query(collection(db, 'faturas'), where('idCartao', '==', cartao.id), where('userId', '==', userId))
     );
 
-    // Itera sobre cada fatura para excluir seus itens e a própria fatura
     for (const faturaDoc of faturasSnap.docs) {
-      // Encontra todos os itens da fatura
       const itensSnap = await getDocs(
         query(collection(db, 'itensFatura'), where('idFatura', '==', faturaDoc.id), where('userId', '==', userId))
       );
-      // Exclui cada item
+
       for (const item of itensSnap.docs) {
         await deleteDoc(doc(db, 'itensFatura', item.id));
       }
-      // Exclui a fatura
+
       await deleteDoc(doc(db, 'faturas', faturaDoc.id));
     }
 
-    // Finalmente, exclui o cartão
     await deleteDoc(doc(db, 'cartoes', cartao.id));
 
-    cancelarExclusao(); // Fecha o modal
-    await carregarCartoes(); // Recarrega a lista de cartões
+    cancelarExclusao();
+    await carregarCartoes();
 
   } catch (e) {
     console.error('Erro ao excluir cartão e dados relacionados:', e);
@@ -147,9 +133,6 @@ const excluirCartao = async () => {
   }
 };
 
-/**
- * Navega para a tela anterior (home).
- */
 const voltar = () => {
   router.push('/home');
 };
@@ -160,15 +143,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/*
- * IMPORTANTE: Certifique-se de que a fonte de ícones do Material Design
- * está no <head> do seu `public/index.html`:
- * <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
- * Opcional: Para a fonte do número do cartão (Roboto Mono)
- * <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
- */
-
-/* Estilos Globais/Reset Simplificado */
 body,
 html,
 #app {
@@ -236,16 +210,15 @@ html,
 }
 
 .title {
-  font-size: 1.8rem; /* Ajustado para caber melhor */
+  font-size: 1.8rem;
   font-weight: 700;
   margin: 0;
   color: #333;
-  flex-grow: 1; /* Faz o título ocupar o espaço restante */
-  text-align: center; /* Centraliza o texto do título */
-  transform: translateX(-16px); /* Compensa o espaço do botão para uma centralização mais precisa */
+  flex-grow: 1;
+  text-align: center;
+  transform: translateX(-16px);
 }
 
-/* --- Estilos para o Estado Vazio (Empty State) --- */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -272,7 +245,6 @@ html,
   line-height: 1.6;
 }
 
-/* Container para a lista de cartões */
 .cartoes-list-container {
   list-style-type: none;
   padding: 0;
@@ -281,22 +253,21 @@ html,
   max-height: 80vh;
   overflow-y: auto;
   padding-right: 8px;
-  display: flex; /* Adicionado para usar gap */
-  flex-direction: column; /* Adicionado para usar gap */
-  gap: 12px; /* Espaçamento entre os itens da lista */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-/* Estilo para cada item de cartão */
 .cartao-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px; /* Um pouco mais de padding */
-  margin-bottom: 0; /* Removido margem inferior, usando gap do container */
+  padding: 14px;
+  margin-bottom: 0;
   border-radius: 8px;
-  background: linear-gradient(135deg, #f8f9fa, #eef1f5); /* Gradiente sutil */
+  background: linear-gradient(135deg, #f8f9fa, #eef1f5);
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  border: 1px solid #e5e5e5; /* Borda mais definida */
+  border: 1px solid #e5e5e5;
   text-align: left;
   position: relative;
 }
@@ -304,12 +275,12 @@ html,
 .cartao-info .banco {
   font-weight: 600;
   font-size: 1.1rem;
-  color: #2c3e50; /* Uma cor mais escura para destaque */
+  color: #2c3e50;
   margin-bottom: 4px;
 }
 
 .cartao-info .card-number {
-  font-family: 'Roboto Mono', monospace; /* Fonte monoespaçada para números */
+  font-family: 'Roboto Mono', monospace;
   font-size: 1.2rem;
   font-weight: 500;
   color: #444;
@@ -322,7 +293,6 @@ html,
   color: #777;
 }
 
-/* Botão de excluir dentro do cartão */
 .btn-excluir {
   background-color: transparent;
   border: none;
@@ -333,7 +303,7 @@ html,
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #dc3545; /* Vermelho perigo */
+  color: #dc3545;
   transition: background-color 0.2s ease;
 }
 
@@ -345,7 +315,7 @@ html,
   background-color: rgba(220, 53, 69, 0.1);
 }
 
-.no-items-message { /* Esta classe agora é redundante, pois usamos empty-state */
+.no-items-message {
   padding: 16px;
   text-align: center;
   color: #888;
@@ -353,14 +323,12 @@ html,
   margin-top: 24px;
 }
 
-/* Mensagens */
 .error-message {
   color: #dc3545;
   margin-top: 1rem;
   font-weight: 500;
 }
 
-/* Estilos Gerais de Botões */
 .btn {
   padding: 10px 35px;
   font-size: 1rem;
@@ -370,9 +338,9 @@ html,
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   user-select: none;
-  text-decoration: none; /* Remove sublinhado de links */
+  text-decoration: none;
   color: inherit;
-  display: inline-flex; /* Para alinhar ícone e texto */
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
@@ -380,7 +348,7 @@ html,
 
 .add-item-button {
   width: 80%;
-  margin-bottom: 0; /* A margem é controlada pelo empty-state ou list-add-button */
+  margin-bottom: 0;
 }
 
 .large-add-button {
@@ -389,7 +357,7 @@ html,
 }
 
 .list-add-button {
-  margin-bottom: 24px; /* Espaço maior entre o botão e o primeiro item da lista */
+  margin-bottom: 24px;
 }
 
 .filled-button {
@@ -423,8 +391,6 @@ html,
   box-shadow: 0 3px 6px rgba(220, 53, 69, 0.3);
 }
 
-
-/* --- Estilos do Modal --- */
 .modal-overlay {
   position: fixed;
   top: 0;

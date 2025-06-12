@@ -55,33 +55,28 @@ const primeiroNome = ref('');
 const goToAjuda = () => router.push('/ajudaview');
 const goToSobreApp = () => router.push('/sobreview');
 
-// Função de logout
 const logout = async () => {
   try {
-    const authInstance = getAuth(); // Obter instância do auth
+    const authInstance = getAuth();
     await signOut(authInstance);
     console.log('Usuário deslogado com sucesso!');
-    router.push('/'); // Redireciona para a página de login após o logout
+    router.push('/');
   } catch (error) {
     console.error('Erro ao fazer logout:', error);
   }
 };
 
-// Funções de navegação
 const goToSobre = () => router.push('/about');
 const goToDashboard = () => router.push('/dashboard');
 const goToCartoes = () => router.push('/cartoesview');
 const goToFaturas = () => router.push('/faturasview');
 
-// Verifica o estado da autenticação ao montar o componente
 onMounted(() => {
-  const authInstance = getAuth(); // Obter instância do auth
+  const authInstance = getAuth();
   onAuthStateChanged(authInstance, (user) => {
     if (user) {
-      // Prioriza displayName, se não houver, usa a parte do email antes do @
       primeiroNome.value = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
     } else {
-      // Se não houver usuário logado, redireciona para a tela de login
       router.push('/login');
     }
   });
@@ -89,18 +84,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/*
- * IMPORTANTE:
- * Os estilos globais do tema (variáveis de cor como `--md-sys-color-primary`,
- * e estilos para `body`, `html`, `#app`)
- * FORAM REMOVIDOS DESTE ARQUIVO.
- * Eles devem estar em um arquivo CSS GLOBAL (ex: `src/assets/main.css`)
- * e importados em seu `main.js` ou `App.vue`.
- *
- * Este bloco `<style scoped>` contém APENAS os estilos específicos da HomeView.
- */
-
-/* Layout principal */
 .main-layout {
   display: flex;
   flex-direction: column;
@@ -110,29 +93,27 @@ onMounted(() => {
   width: 100%;
   padding: 16px;
   box-sizing: border-box;
-  background-color: var(--md-sys-color-background); /* Usa a variável global do tema */
+  background-color: var(--md-sys-color-background);
   font-family: 'Roboto', sans-serif;
 }
 
-/* Conteúdo principal da página (card) */
 .home-content {
   width: 100%;
-  max-width: 380px; /* Levemente mais largo para melhor distribuição */
+  max-width: 380px;
   box-sizing: border-box;
-  padding: 32px; /* Aumentado o padding para mais espaço interno */
-  border-radius: 24px; /* Mais arredondado */
-  box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.15); /* Sombra mais suave e proeminente */
+  padding: 32px;
+  border-radius: 24px;
+  box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.15);
   background-color: var(--md-sys-color-surface-container-high);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px; /* Espaçamento consistente entre os elementos */
+  gap: 18px;
 }
 
-/* Logo */
 .logo {
   width: 100%;
-  max-width: 200px; /* Tamanho ajustado para a logo */
+  max-width: 200px;
   height: auto;
   object-fit: contain;
   margin-top: -130px;
@@ -140,10 +121,10 @@ onMounted(() => {
 }
 
 .welcome-message {
-  font-size: 1.25rem; /* Levemente maior */
+  font-size: 1.25rem;
   font-weight: 500;
-  margin-top: -20px; /* Espaço após a mensagem de boas-vindas */
-  color: var(--md-sys-color-on-surface-variant); /* Cor mais sutil */
+  margin-top: -20px;
+  color: var(--md-sys-color-on-surface-variant);
   text-align: center;
 }
 
@@ -159,29 +140,27 @@ onMounted(() => {
   font-weight: 500;
 }
 
-/* Navegação principal */
 .main-nav {
   display: flex;
   flex-direction: column;
   width: 100%;
-  gap: 14px; /* Espaçamento entre os botões de navegação */
+  gap: 14px;
 }
 
-/* Estilos de Botões */
 .btn {
   width: 100%;
-  padding: 16px 24px; /* Aumentado padding para botões maiores */
+  padding: 16px 24px;
   font-size: 1.05rem;
   font-weight: 600;
   border: none;
-  border-radius: 10px; /* ARREDONDAMENTO DE 10PX CONFORME SOLICITADO */
+  border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
   user-select: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px; /* Aumentado o espaço para ícones */
+  gap: 12px;
   text-decoration: none;
 }
 
@@ -194,7 +173,7 @@ onMounted(() => {
 .filled-button:hover {
   background-color: var(--md-sys-color-primary-container);
   color: var(--md-sys-color-on-primary-container);
-  transform: translateY(-3px); /* Efeito de elevação mais pronunciado */
+  transform: translateY(-3px);
   box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.3);
 }
 
@@ -204,7 +183,6 @@ onMounted(() => {
   box-shadow: none;
 }
 
-/* NOVAS CORES PARA BOTÕES DE NAVEGAÇÃO */
 .nav-button.secondary-color-button {
   background-color: var(--md-sys-color-secondary);
   color: var(--md-sys-color-on-secondary);
@@ -230,11 +208,11 @@ onMounted(() => {
 }
 
 .nav-button .material-icons {
-  font-size: 22px; /* Tamanho do ícone nos botões de navegação, levemente maior */
+  font-size: 22px;
 }
 
 .logout-button {
-  margin-top: 32px; /* Mais espaço antes do botão de sair */
+  margin-top: 32px;
   background-color: var(--md-sys-color-error);
   color: var(--md-sys-color-on-error);
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
@@ -298,12 +276,11 @@ onMounted(() => {
   background: #e0e0e0;
 }
 
-/* Media query para telas menores */
 @media (max-width: 400px) {
   .home-content {
     max-width: 100%;
-    border-radius: 0; /* Remove borda arredondada em telas muito pequenas */
-    box-shadow: none; /* Remove sombra em telas muito pequenas */
+    border-radius: 0;
+    box-shadow: none;
   }
 }
 </style>

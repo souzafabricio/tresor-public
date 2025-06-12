@@ -1,8 +1,6 @@
 <template>
   <div class="main-container">
     <div class="content-card">
-
-      <!-- Cabeçalho padronizado -->
       <div class="title-row">
         <button @click="voltar" class="back-button" aria-label="Voltar">
           <span class="material-icons">arrow_back</span>
@@ -16,7 +14,7 @@
 
       <div class="help-section">
         <h2 class="section-title"><span class="material-icons section-icon">trending_up</span> Lançamentos</h2>
-        <p>Registe todas as suas entradas e saídas de dinheiro. Essencial para ter controle sobre cada transação.</p>
+        <p>Registre todas as suas entradas e saídas de dinheiro. Essencial para ter controle sobre cada transação.</p>
         <ul class="feature-list">
           <li><strong>Adicionar Lançamento:</strong> Clique em "Adicionar Lançamento", preencha o nome, valor (use negativo para saídas), data, descrição e selecione uma categoria. Pode adicionar observações.</li>
           <li><strong>Editar/Excluir:</strong> Clique num lançamento na lista para abrir o modo de edição. Aqui pode atualizar os dados ou excluí-lo permanentemente.</li>
@@ -75,51 +73,36 @@
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
-
-/**
- * Navega de volta para a tela inicial.
- */
 const voltar = () => {
-  router.push('/home'); // Assumindo que sua tela inicial é '/home'
+  router.push('/home');
 };
 </script>
 
 <style scoped>
-/*
- * IMPORTANTE:
- * Os estilos globais do tema (variáveis de cor como `--md-sys-color-primary`,
- * e estilos para `body`, `html`, `#app`)
- * FORAM REMOVIDOS DESTE ARQUIVO.
- * Eles devem estar em um arquivo CSS GLOBAL (ex: `src/assets/main.css`)
- * e importados no seu `main.js` ou `App.vue`.
- *
- * Este bloco `<style scoped>` contém APENAS os estilos específicos da AjudaView.
- */
-
 .main-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start; /* Alinhado ao topo para conteúdo longo */
+  justify-content: flex-start;
   min-height: 100vh;
   width: 100%;
   padding: 16px;
   box-sizing: border-box;
-  background-color: var(--md-sys-color-background); /* Usa variável global */
+  background-color: var(--md-sys-color-background);
   font-family: 'Roboto', sans-serif;
-  overflow-y: auto; /* Permite rolagem se o conteúdo for muito longo */
+  overflow-y: auto;
 }
 
 .content-card {
   width: 100%;
-  max-width: 380px; /* Consistente com HomeView */
+  max-width: 380px;
   box-sizing: border-box;
-  padding: 24px; /* Padding interno do card */
-  border-radius: 18px; /* Arredondamento do card */
-  box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.1); /* Sombra suave */
-  background-color: var(--md-sys-color-surface-container-high); /* Cor de superfície do card */
-  color: var(--md-sys-color-on-surface); /* Cor padrão do texto no card */
-  margin: 1rem 0; /* Margem superior e inferior */
+  padding: 24px;
+  border-radius: 18px;
+  box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.1);
+  background-color: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  margin: 1rem 0;
   text-align: center;
 }
 
@@ -128,7 +111,7 @@ const voltar = () => {
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
-  margin-bottom: 24px; /* Espaço após o título */
+  margin-bottom: 24px;
 }
 
 .title {
@@ -138,15 +121,15 @@ const voltar = () => {
   margin: 0;
   flex-grow: 1;
   text-align: center;
-  transform: translateX(-25px); /* Ajusta para centralizar o título */
+  transform: translateX(-25px);
 }
 
 .back-button {
   background-color: var(--md-sys-color-surface-container-low);
   color: var(--md-sys-color-on-surface-variant);
   border-radius: 10px;
-  width: 15%; /* Tamanho fixo */
-  height: 40px; /* Tamanho fixo */
+  width: 15%;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -173,11 +156,11 @@ const voltar = () => {
 
 .help-section {
   text-align: left;
-  margin-bottom: 32px; /* Espaço entre as seções */
-  background-color: var(--md-sys-color-surface-container-low); /* Fundo leve para a seção */
+  margin-bottom: 32px;
+  background-color: var(--md-sys-color-surface-container-low);
   padding: 16px;
   border-radius: 12px;
-  box-shadow: inset 0 0 8px rgba(0,0,0,0.03); /* Sombra interna sutil */
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.03);
 }
 
 .section-title {
@@ -186,7 +169,7 @@ const voltar = () => {
   gap: 10px;
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--md-sys-color-primary); /* Cor primária para o título da seção */
+  color: var(--md-sys-color-primary);
   margin-bottom: 12px;
 }
 
@@ -202,7 +185,7 @@ const voltar = () => {
 }
 
 .feature-list {
-  list-style: none; /* Remove bullet padrão */
+  list-style: none;
   padding: 0;
   margin: 0;
 }
@@ -221,22 +204,21 @@ const voltar = () => {
 }
 
 .feature-list li::before {
-  content: '•'; /* Bullet personalizado */
-  color: var(--md-sys-color-secondary); /* Cor do bullet */
+  content: '•';
+  color: var(--md-sys-color-secondary);
   font-weight: bold;
   display: inline-block;
   width: 1em;
   margin-left: -1em;
 }
 
-/* Estilos de Botões (reutilizados do HomeView) */
 .btn {
   width: 100%;
   padding: 14px 24px;
   font-size: 1.05rem;
   font-weight: 600;
   border: none;
-  border-radius: 10px; /* Consistente com 10px */
+  border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
   user-select: none;
@@ -267,16 +249,15 @@ const voltar = () => {
 }
 
 .back-to-home-button {
-    margin-top: 24px; /* Espaçamento antes do botão final */
+    margin-top: 24px;
 }
 
-/* Media Query para telas menores */
 @media (max-width: 400px) {
   .content-card {
     max-width: 100%;
     border-radius: 0;
     box-shadow: none;
-    padding: 16px; /* Ajusta padding para telas muito pequenas */
+    padding: 16px;
   }
 
   .title {

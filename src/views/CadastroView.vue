@@ -34,12 +34,12 @@
 <script setup>
 import { ref } from 'vue';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore'; // Importar Firestore
-import { auth, db } from '../firebase.js'; // Certifique-se de que 'db' é exportado aqui
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase.js';
 import { useRouter } from 'vue-router';
 import { getFriendlyErrorMessage } from '@/utils/firebaseErrors.js';
 
-const name = ref(''); // Novo ref para o nome
+const name = ref('');
 const email = ref('');
 const password = ref('');
 const confirmPassword = ref('');
@@ -57,7 +57,7 @@ function capitalizarNomeCompleto(nome) {
 }
 
 const register = async () => {
-  error.value = ''; // Limpa erros anteriores
+  error.value = '';
 
   if (!name.value || !email.value || !password.value || !confirmPassword.value) {
     error.value = 'Por favor, preencha todos os campos.';
@@ -70,23 +70,19 @@ const register = async () => {
   }
 
   try {
-    // Capitaliza o nome antes de cadastrar
     const nomeFormatado = capitalizarNomeCompleto(name.value);
 
     const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value);
     const user = userCredential.user;
 
-    // 1. Atribuir o nome de exibição no Firebase Authentication
     await updateProfile(user, {
       displayName: nomeFormatado
     });
 
-    // 2. Salvar dados adicionais do usuário (nome, email) no Firestore
     await setDoc(doc(db, 'users', user.uid), {
       name: nomeFormatado,
       email: user.email,
       createdAt: new Date(),
-      // Você pode adicionar mais campos aqui, como tema preferido, etc.
     });
 
     console.log('Usuário registrado e perfil atualizado:', user);
@@ -103,24 +99,16 @@ const voltarLogin = () => {
 </script>
 
 <style scoped>
-/*
- * IMPORTANTE:
- * Os estilos globais de tema (:root, html.dark-mode, body, #app)
- * foram removidos daqui. Eles devem estar em um arquivo CSS global
- * (ex: `src/assets/main.css`) e importados no seu `main.js` ou `App.vue`.
- * Apenas os estilos específicos deste componente devem permanecer aqui.
- */
-
 .main-layout {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh; /* Garante que o layout ocupe a altura total da viewport */
-  padding: 16px; /* Padding geral para o layout */
+  min-height: 100vh;
+  padding: 16px;
   box-sizing: border-box;
-  background-color: var(--md-sys-color-background); /* Usa a variável global do tema */
-  color: var(--md-sys-color-on-background); /* Usa a variável global do tema */
+  background-color: var(--md-sys-color-background); 
+  color: var(--md-sys-color-on-background);
   font-family: 'Roboto', sans-serif;
 }
 
@@ -129,7 +117,7 @@ const voltarLogin = () => {
   max-width: 200px;
   object-fit: contain;
   margin-bottom: 1rem;
-  margin-top: -10rem; /* Mantenha se quiser a logo bem alta */
+  margin-top: -10rem;
   display: block;
   user-select: none;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
@@ -137,15 +125,15 @@ const voltarLogin = () => {
   border-radius: 16px;
 }
 
-.auth-content { /* Renomeado de .login-content para ser mais genérico para auth */
+.auth-content {
   width: 100%;
   max-width: 360px;
   box-sizing: border-box;
   padding: 24px;
   border-radius: 12px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-  background-color: var(--md-sys-color-surface-container-high); /* Usa a variável global do tema */
-  color: var(--md-sys-color-on-surface); /* Garante que o texto dentro do card mude */
+  background-color: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
 }
 
 h1 {
@@ -158,7 +146,6 @@ h1 {
   text-align: center;
 }
 
-/* Material Design 3 Text Field */
 .input-container {
   position: relative;
   margin-bottom: 24px;
@@ -169,10 +156,10 @@ h1 {
   padding: 16px 16px 8px 16px;
   font-size: 1rem;
   border: none;
-  border-bottom: 1px solid var(--md-sys-color-outline); /* Usa a variável global do tema */
+  border-bottom: 1px solid var(--md-sys-color-outline);
   border-radius: 4px 4px 0 0;
-  background-color: var(--md-sys-color-surface-container); /* Usa a variável global do tema */
-  color: var(--md-sys-color-on-surface); /* Cor do texto no input */
+  background-color: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
   transition: border-color 0.2s ease, background-color 0.2s ease;
   outline: none;
 }
@@ -182,15 +169,15 @@ h1 {
 }
 
 .text-field:focus {
-  border-bottom: 2px solid var(--md-sys-color-primary); /* Usa a variável global do tema */
-  background-color: var(--md-sys-color-surface-container-highest); /* Usa a variável global do tema */
+  border-bottom: 2px solid var(--md-sys-color-primary);
+  background-color: var(--md-sys-color-surface-container-highest);
 }
 
 .label-text {
   position: absolute;
   left: 16px;
   top: 16px;
-  color: var(--md-sys-color-on-surface-variant); /* Usa a variável global do tema */
+  color: var(--md-sys-color-on-surface-variant);
   pointer-events: none;
   transition: all 0.2s ease;
   font-size: 1rem;
@@ -200,10 +187,9 @@ h1 {
 .text-field:not(:placeholder-shown) + .label-text {
   top: 4px;
   font-size: 0.75rem;
-  color: var(--md-sys-color-primary); /* Usa a variável global do tema */
+  color: var(--md-sys-color-primary);
 }
 
-/* Material Design 3 Buttons */
 .button-group {
   display: flex;
   flex-direction: column;
@@ -228,40 +214,40 @@ h1 {
 }
 
 .filled-button {
-  background-color: var(--md-sys-color-primary); /* Usa a variável global do tema */
-  color: var(--md-sys-color-on-primary); /* Usa a variável global do tema */
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
   box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .filled-button:hover {
-  background-color: var(--md-sys-color-primary-container); /* Usa a variável global do tema */
-  color: var(--md-sys-color-on-primary-container); /* Usa a variável global do tema */
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container); 
   box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .filled-button:active {
-  background-color: var(--md-sys-color-on-primary); /* Usa a variável global do tema */
+  background-color: var(--md-sys-color-on-primary);
   box-shadow: none;
 }
 
 .outlined-button {
   background-color: transparent;
-  color: var(--md-sys-color-primary); /* Usa a variável global do tema */
-  border: 1px solid var(--md-sys-color-outline); /* Usa a variável global do tema */
+  color: var(--md-sys-color-primary);
+  border: 1px solid var(--md-sys-color-outline);
 }
 
 .outlined-button:hover {
-  background-color: rgba(var(--md-sys-color-primary-rgb), 0.08); /* Usa a variável global do tema */
-  border-color: var(--md-sys-color-primary); /* Usa a variável global do tema */
+  background-color: rgba(var(--md-sys-color-primary-rgb), 0.08);
+  border-color: var(--md-sys-color-primary);
 }
 
 .outlined-button:active {
-  background-color: rgba(var(--md-sys-color-primary-rgb), 0.12); /* Usa a variável global do tema */
-  border-color: var(--md-sys-color-primary); /* Usa a variável global do tema */
+  background-color: rgba(var(--md-sys-color-primary-rgb), 0.12);
+  border-color: var(--md-sys-color-primary);
 }
 
 .text-error {
-  color: var(--md-sys-color-error); /* Usa a variável global do tema */
+  color: var(--md-sys-color-error);
   margin-top: 1rem;
   font-weight: 500;
   max-width: 320px;
@@ -270,7 +256,6 @@ h1 {
   word-wrap: break-word;
 }
 
-/* Media query adjustments for smaller screens */
 @media (max-width: 400px) {
   .auth-content {
     max-width: 100%;
@@ -279,6 +264,6 @@ h1 {
 }
 
 nav {
-  padding: 80px; /* Isso parece ser um espaçamento para o topo. Se não houver nav, pode ser ajustado. */
+  padding: 80px;
 }
 </style>

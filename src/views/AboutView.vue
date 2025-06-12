@@ -72,11 +72,20 @@
             <input v-model="newEntry.nome" type="text" id="nome" class="text-field" placeholder=" " />
             <label for="nome" class="label-text">Nome</label>
           </div>
-          <div class="input-container">
-            <input v-model="newEntry.valorFormatado" type="text" id="valor" class="text-field" placeholder=" "
-              inputmode="decimal" @focus="handleFocusValor" />
-            <label for="valor" class="label-text">Valor (use negativo para dívidas)</label>
+
+          <div class="input-container value-input-group-container">
+            <div class="value-input-group">
+              <input v-model="newEntry.valorFormatado" type="text" id="valor" class="text-field value-input-field" placeholder=" "
+                inputmode="decimal" pattern="^-?\d*[.,]?\d*$" @focus="handleFocusValor" />
+              <button @click="setEntrySign(newEntry, -1, 'valor')" class="btn small-sign-button neg-button" type="button">
+                <span class="material-icons">remove</span>
+              </button>
+              <button @click="setEntrySign(newEntry, 1, 'valor')" class="btn small-sign-button pos-button" type="button">
+                <span class="material-icons">add</span>
+              </button>
+            </div>
           </div>
+
           <div class="input-container">
             <input v-model="newEntry.data" type="date" id="data" class="text-field" placeholder=" " />
             <label for="data" class="label-text">Data</label>
@@ -124,11 +133,23 @@
             <input v-model="editingEntry.nome" type="text" id="editNome" class="text-field" placeholder=" " />
             <label for="editNome" class="label-text">Nome (ex: Açaí, Dívida Mãe)</label>
           </div>
-          <div class="input-container">
-            <input v-model="editingEntry.valorFormatado" type="text" id="editValor" class="text-field" placeholder=" "
-              inputmode="decimal" @focus="handleFocusValor" />
-            <label for="editValor" class="label-text">Valor (use negativo para dívidas)</label>
+
+          <!-- NOVO: Input de Valor com Botões +/- para Edição -->
+          <div class="input-container value-input-group-container">
+            <div class="value-input-group">
+              <input v-model="editingEntry.valorFormatado" type="text" id="editValor" class="text-field value-input-field" placeholder=" "
+                inputmode="decimal" @focus="handleFocusValor" />
+              <button @click="setEntrySign(editingEntry, -1, 'editValor')" class="btn small-sign-button neg-button" type="button">
+                <span class="material-icons">remove</span>
+              </button>
+              <button @click="setEntrySign(editingEntry, 1, 'editValor')" class="btn small-sign-button pos-button" type="button">
+                <span class="material-icons">add</span>
+              </button>
+            </div>
+            <label for="editValor" class="label-text">Valor</label>
           </div>
+          <!-- FIM NOVO -->
+
           <div class="input-container">
             <input v-model="editingEntry.data" type="date" id="editData" class="text-field" placeholder=" " />
             <label for="editData" class="label-text">Data</label>
@@ -181,7 +202,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, watch } from 'vue';
+import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue';
 import { collection, addDoc, getDocs, deleteDoc, doc, query, where, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -190,15 +211,12 @@ import { useRouter } from 'vue-router';
 const auth = getAuth();
 const router = useRouter();
 
-// Estados da UI principal
 const lancamentos = ref([]);
 const erro = ref('');
 
-// Data de referência para navegação
 const anoSelecionado = ref(new Date().getFullYear());
-const mesSelecionado = ref(new Date().getMonth()); // 0 para Janeiro, 11 para Dezembro
+const mesSelecionado = ref(new Date().getMonth());
 
-// --- Propriedades Computadas para Datas ---
 const inicioDoMes = computed(() => {
   return new Date(anoSelecionado.value, mesSelecionado.value, 1);
 });
@@ -207,19 +225,15 @@ const fimDoMes = computed(() => {
   return new Date(anoSelecionado.value, mesSelecionado.value + 1, 0, 23, 59, 59, 999);
 });
 
-// Nomes dos meses para exibição
 const meses = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
-// Exibe o nome do mês e ano selecionado
 const nomeMesSelecionado = computed(() => {
   return `${meses[mesSelecionado.value]} de ${anoSelecionado.value}`;
 });
 
-
-// --- PROPRIEDADES COMPUTADAS ---
 const totalEntradas = computed(() => {
   return lancamentos.value
     .filter(item => item.valor >= 0)
@@ -232,7 +246,6 @@ const totalSaidas = computed(() => {
     .reduce((sum, item) => sum + item.valor, 0);
 });
 
-// --- DADOS DAS CATEGORIAS ---
 const categoriasDisponiveis = ref([
   { nome: 'Salário', icon: 'payments' },
   { nome: 'Essencial', icon: 'home' },
@@ -252,26 +265,23 @@ const categoriasDisponiveis = ref([
   { nome: 'Outros', icon: 'category' }
 ]);
 
-// Função para obter o ícone da categoria
 const getCategoryIcon = (categoryName) => {
   const category = categoriasDisponiveis.value.find(cat => cat.nome === categoryName);
   return category ? category.icon : 'category';
 };
 
-// Estados do Modal de Adicionar
 const showAddModal = ref(false);
 const modalError = ref('');
 const newEntry = reactive({
   nome: '',
   descricao: '',
   data: '',
-  valor: 0, // Valor numérico para salvar no Firebase
-  valorFormatado: '0,00', // Valor em string formatada para o input
+  valor: 0,
+  valorFormatado: '0,00',
   obs: '',
   categoria: ''
 });
 
-// Estados do Modal de Edição
 const showEditModal = ref(false);
 const editingEntry = reactive({
   id: null,
@@ -284,77 +294,56 @@ const editingEntry = reactive({
   categoria: ''
 });
 
-// Estados do Modal de Exclusão
 const entryToDelete = ref(null);
 
-// Variável para controlar qual modal está ativo para o watcher de valor
-const currentActiveModalInputId = ref(''); // 'valor' para adicionar, 'editValor' para editar
+const currentActiveModalInputId = ref('');
 
-// --- FUNÇÃO DE FORMATAÇÃO DE VALOR EM TEMPO REAL ---
-const formatarInputValor = (valorString, field) => {
-  if (typeof valorString !== 'string') {
-    valorString = String(valorString);
+// Helper para converter string formatada (ex: "1.234,56") para número (ex: 1234.56)
+const parseFormattedInputToNumeric = (inputString) => {
+  if (typeof inputString !== 'string') {
+    inputString = String(inputString);
   }
+  const isNegative = inputString.startsWith('-');
+  let cleaned = inputString.replace(/[^0-9]/g, '');
 
-  // Permite o sinal negativo inicial e trata caso o usuário digite apenas '-'
-  const isNegative = valorString.startsWith('-');
-  let cleaned = valorString.replace(/[^0-9]/g, '');
+  if (cleaned === '') return 0;
 
-  // Se a string estiver vazia (após remover não-dígitos) ou for apenas "-", retorne o estado inicial
-  if (cleaned === '') {
-    if (field === 'newEntry') {
-      newEntry.valor = 0;
-    } else { // field === 'editingEntry'
-      editingEntry.valor = 0;
-    }
-    return isNegative ? '-' : '0,00'; // Se só tem '-', mantém, senão volta para '0,00'
-  }
-
-
-  // Remove zeros à esquerda (ex: "005" vira "5")
-  if (cleaned.length > 1 && cleaned.startsWith('0')) {
-    cleaned = cleaned.replace(/^0+/, '');
-  }
-
-  // Garante que a string tem pelo menos 3 dígitos para formatar com duas casas decimais (ex: "5" vira "005")
+  // Garante que haja pelo menos dois dígitos para a parte decimal
   while (cleaned.length < 3) {
     cleaned = '0' + cleaned;
   }
 
-  let integerPart = cleaned.slice(0, -2);
-  let decimalPart = cleaned.slice(-2);
-
-  // Adiciona separador de milhares
-  integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-
-  let formatted = integerPart + ',' + decimalPart;
-
-  // Adiciona o sinal negativo de volta, se aplicável
-  if (isNegative) {
-    formatted = '-' + formatted;
-  }
-
-  // Atualiza o valor numérico (para salvar no Firebase)
-  const numericValue = parseFloat(formatted.replace(/\./g, '').replace(',', '.'));
-
-  if (field === 'newEntry') {
-    newEntry.valor = isNegative ? -Math.abs(numericValue) : Math.abs(numericValue);
-  } else { // field === 'editingEntry'
-    editingEntry.valor = isNegative ? -Math.abs(numericValue) : Math.abs(numericValue);
-  }
-
-  return formatted;
+  let numericValue = parseFloat(cleaned.slice(0, -2) + '.' + cleaned.slice(-2));
+  return isNegative ? -Math.abs(numericValue) : Math.abs(numericValue);
 };
 
-// --- WATCHER PARA FORMATAR O VALOR ENQUANTO DIGITA (PARA AMBOS OS MODAIS) ---
+// Helper para formatar valor numérico para exibição no campo de input
+const formatNumericValueForInputDisplay = (numericValue) => {
+  if (typeof numericValue !== 'number' || isNaN(numericValue)) {
+    return '0,00';
+  }
+  // Remove o sinal negativo para a formatação, depois o adiciona se necessário
+  const valueForFormat = Math.abs(numericValue);
+  const formatted = valueForFormat.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true });
+  return numericValue < 0 ? '-' + formatted : formatted;
+};
+
+
+// Atualiza as funções de watch para usar os novos helpers
 watch(() => newEntry.valorFormatado, (newValue, oldValue) => {
   if (currentActiveModalInputId.value === 'valor') {
     const inputElement = document.getElementById('valor');
     if (!inputElement) return;
 
     const caretPosition = inputElement.selectionStart;
-    const formattedValue = formatarInputValor(newValue, 'newEntry');
-    newEntry.valorFormatado = formattedValue;
+    const newNumericValue = parseFormattedInputToNumeric(newValue);
+    newEntry.valor = newNumericValue;
+    const formattedValue = formatNumericValueForInputDisplay(newNumericValue);
+
+    // Evita loop infinito: só atualiza o v-model se houver diferença real na string formatada
+    if (newEntry.valorFormatado !== formattedValue) {
+      newEntry.valorFormatado = formattedValue;
+    }
 
     requestAnimationFrame(() => {
       const newCaretPosition = calculateNewCaretPosition(oldValue, formattedValue, caretPosition);
@@ -369,8 +358,13 @@ watch(() => editingEntry.valorFormatado, (newValue, oldValue) => {
     if (!inputElement) return;
 
     const caretPosition = inputElement.selectionStart;
-    const formattedValue = formatarInputValor(newValue, 'editingEntry');
-    editingEntry.valorFormatado = formattedValue;
+    const newNumericValue = parseFormattedInputToNumeric(newValue);
+    editingEntry.valor = newNumericValue;
+    const formattedValue = formatNumericValueForInputDisplay(newNumericValue);
+
+    if (editingEntry.valorFormatado !== formattedValue) {
+      editingEntry.valorFormatado = formattedValue;
+    }
 
     requestAnimationFrame(() => {
       const newCaretPosition = calculateNewCaretPosition(oldValue, formattedValue, caretPosition);
@@ -379,42 +373,55 @@ watch(() => editingEntry.valorFormatado, (newValue, oldValue) => {
   }
 });
 
-
-// Helper para calcular a nova posição do cursor
 const calculateNewCaretPosition = (oldValue, newValue, oldCaretPosition) => {
   let newCaretPosition = oldCaretPosition;
 
-  // Ajusta a posição do cursor com base nas mudanças de comprimento da string
+  // Lógica de ajuste do cursor baseada na diferença de tamanho da string
   const diff = newValue.length - oldValue.length;
   newCaretPosition += diff;
 
-  // Lógica específica para o sinal negativo no início
+  // Ajuste especial para quando o sinal negativo é adicionado/removido na posição 0
   if (oldValue.startsWith('-') && !newValue.startsWith('-')) {
-    newCaretPosition = Math.max(0, newCaretPosition - 1); // Se o '-' foi removido
+    newCaretPosition = Math.max(0, newCaretPosition - 1);
   } else if (!oldValue.startsWith('-') && newValue.startsWith('-') && oldCaretPosition === 0) {
-    newCaretPosition = Math.min(newValue.length, newCaretPosition + 1); // Se o '-' foi adicionado no início
+    newCaretPosition = Math.min(newValue.length, newCaretPosition + 1);
   }
 
-  // Garante que o cursor não saia dos limites
   return Math.min(Math.max(0, newCaretPosition), newValue.length);
 };
 
+// Nova função para definir o sinal do valor com base nos botões
+const setEntrySign = (entryRef, sign, inputId) => {
+    currentActiveModalInputId.value = inputId; // Define o ID do input ativo para o watch
 
-// Função para lidar com o foco no campo de valor
+    // Pega o valor numérico absoluto atual
+    const currentNumericValue = Math.abs(entryRef.valor);
+    // Aplica o novo sinal
+    const newNumericValue = sign * currentNumericValue;
+
+    // Atualiza o valor numérico
+    entryRef.valor = newNumericValue;
+    // Atualiza a string formatada para exibição no input
+    entryRef.valorFormatado = formatNumericValueForInputDisplay(newNumericValue);
+
+    // Garante que o input mantenha o foco e o cursor no final
+    nextTick(() => {
+        const inputElement = document.getElementById(inputId);
+        if (inputElement) {
+            inputElement.focus();
+            inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length);
+        }
+    });
+};
+
 const handleFocusValor = (event) => {
-  // Define qual input está ativo para o watcher correto
   currentActiveModalInputId.value = event.target.id;
-
-  // Se o valor for "0,00" e não for negativo, seleciona todo o conteúdo
+  // Quando foca, seleciona todo o texto se for "0,00" ou "-0,00" para facilitar a digitação
   if (event.target.value === '0,00' || event.target.value === '-0,00') {
     event.target.setSelectionRange(0, event.target.value.length);
   }
 };
 
-
-/**
- * Carrega lançamentos do usuário logado para o mês e ano selecionados do Firestore.
- */
 const carregarLancamentos = async (userId) => {
   erro.value = '';
   try {
@@ -427,7 +434,6 @@ const carregarLancamentos = async (userId) => {
     const snapshot = await getDocs(q);
     const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    // Ordena por data, da mais recente para a mais antiga
     lancamentos.value = lista.sort((a, b) => b.data.toDate() - a.data.toDate());
 
   } catch (e) {
@@ -436,48 +442,40 @@ const carregarLancamentos = async (userId) => {
   }
 };
 
-/**
- * Adiciona um novo lançamento no Firestore.
- */
 const adicionarLancamento = async () => {
   modalError.value = '';
 
-  // Garante que newEntry.valor esteja atualizado antes da validação final
-  newEntry.valorFormatado = formatarInputValor(newEntry.valorFormatado, 'newEntry');
+  // Garante que newEntry.valor esteja atualizado a partir do valorFormatado antes da validação
+  newEntry.valor = parseFormattedInputToNumeric(newEntry.valorFormatado);
 
   if (!newEntry.nome || !newEntry.descricao || newEntry.valor === null || isNaN(newEntry.valor) || !newEntry.data || !newEntry.categoria) {
     modalError.value = 'Preencha todos os campos obrigatórios (Nome, Valor, Data, Descrição e Categoria).';
     return;
   }
-  // Se o valor for 0 e o formatado for "0,00", é considerado válido para adição.
-  // Caso contrário, se o campo for preenchido com algo que resulta em 0,00 mas não é válido (ex: "abc"), impedimos.
-  if (newEntry.valor === 0 && newEntry.valorFormatado !== '0,00' && newEntry.valorFormatado !== '-0,00') {
+
+  // Se o valor formatado for uma string vazia ou consistir apenas de caracteres não numéricos (ex: "-", ".", ","), considera inválido.
+  if (newEntry.valor === 0 && newEntry.valorFormatado.replace(/[^0-9]/g, '') === '') {
     modalError.value = 'O valor inserido não é válido.';
     return;
   }
 
   try {
     const userId = auth.currentUser.uid;
-    // --- MUDANÇA PRINCIPAL AQUI PARA TRATAR A DATA ---
-    const dateParts = newEntry.data.split('-').map(Number); // [ano, mês, dia]
-    // O construtor Date() usa mês baseado em zero (0 para janeiro, 1 para fevereiro, etc.)
-    // Adicionamos 12 horas para garantir que fique no meio do dia no fuso horário local.
-    const dateToSave = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], 12, 0, 0); // Ano, Mês-1, Dia, Hora, Minuto, Segundo
-
+    const dateParts = newEntry.data.split('-').map(Number);
+    const dateToSave = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], 12, 0, 0);
 
     await addDoc(collection(db, 'lancamentos'), {
       userId,
       nome: newEntry.nome,
       descricao: newEntry.descricao,
-      data: dateToSave, // Usamos o objeto Date ajustado
-      valor: Number(newEntry.valor),
+      data: dateToSave,
+      valor: Number(newEntry.valor), // Usa o valor numérico processado
       obs: newEntry.obs,
       categoria: newEntry.categoria,
       criadoEm: new Date(),
     });
 
     closeAddModal();
-    // Recarrega apenas se o lançamento adicionado for no mês/ano atual
     const entryDate = new Date(newEntry.data);
     if (entryDate.getFullYear() === anoSelecionado.value && entryDate.getMonth() === mesSelecionado.value) {
       await carregarLancamentos(userId);
@@ -489,44 +487,39 @@ const adicionarLancamento = async () => {
   }
 };
 
-/**
- * Salva as edições de um lançamento no Firestore.
- */
 const salvarEdicao = async () => {
   modalError.value = '';
 
-  // Garante que editingEntry.valor esteja atualizado antes da validação final
-  editingEntry.valorFormatado = formatarInputValor(editingEntry.valorFormatado, 'editingEntry');
+  // Garante que editingEntry.valor esteja atualizado a partir do valorFormatado antes da validação
+  editingEntry.valor = parseFormattedInputToNumeric(editingEntry.valorFormatado);
 
   if (!editingEntry.nome || !editingEntry.descricao || editingEntry.valor === null || isNaN(editingEntry.valor) || !editingEntry.data || !editingEntry.categoria) {
     modalError.value = 'Preencha todos os campos obrigatórios (Nome, Valor, Data, Descrição e Categoria).';
     return;
   }
-  if (editingEntry.valor === 0 && editingEntry.valorFormatado !== '0,00' && editingEntry.valorFormatado !== '-0,00') {
+  // Se o valor formatado for uma string vazia ou consistir apenas de caracteres não numéricos, considera inválido.
+  if (editingEntry.valor === 0 && editingEntry.valorFormatado.replace(/[^0-9]/g, '') === '') {
     modalError.value = 'O valor inserido não é válido.';
     return;
   }
 
   try {
     const lancamentoRef = doc(db, 'lancamentos', editingEntry.id);
-    // --- MUDANÇA PRINCIPAL AQUI PARA TRATAR A DATA ---
-    const dateParts = editingEntry.data.split('-').map(Number); // [ano, mês, dia]
-    // O construtor Date() usa mês baseado em zero (0 para janeiro, 1 para fevereiro, etc.)
-    // Adicionamos 12 horas para garantir que fique no meio do dia no fuso horário local.
-    const dateToSave = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], 12, 0, 0); // Ano, Mês-1, Dia, Hora, Minuto, Segundo
+    const dateParts = editingEntry.data.split('-').map(Number);
+    const dateToSave = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], 12, 0, 0);
 
     await updateDoc(lancamentoRef, {
       nome: editingEntry.nome,
       descricao: editingEntry.descricao,
-      data: dateToSave, // Usamos o objeto Date ajustado
-      valor: Number(editingEntry.valor),
+      data: dateToSave,
+      valor: Number(editingEntry.valor), // Usa o valor numérico processado
       obs: editingEntry.obs,
       categoria: editingEntry.categoria,
-      atualizadoEm: new Date(), // Adiciona um timestamp de atualização
+      atualizadoEm: new Date(),
     });
 
     closeEditModal();
-    await carregarLancamentos(auth.currentUser.uid); // Recarrega para refletir a mudança
+    await carregarLancamentos(auth.currentUser.uid);
 
   } catch (e) {
     console.error('Erro ao salvar edição:', e);
@@ -534,17 +527,13 @@ const salvarEdicao = async () => {
   }
 };
 
-
-/**
- * Exclui um lançamento do Firestore.
- */
 const excluirLancamento = async () => {
   if (!entryToDelete.value) return;
   try {
     const userId = auth.currentUser.uid;
     await deleteDoc(doc(db, 'lancamentos', entryToDelete.value.id));
     cancelarExclusao();
-    closeEditModal(); // Fecha o modal de edição se a exclusão veio de lá
+    closeEditModal();
     await carregarLancamentos(userId);
   } catch (e) {
     console.error("Erro ao excluir:", e);
@@ -552,15 +541,13 @@ const excluirLancamento = async () => {
   }
 };
 
-// --- Funções de controle dos Modais ---
 const openAddModal = () => {
-  // Reseta os campos do formulário e define a data atual como padrão
   Object.assign(newEntry, {
     nome: '',
     descricao: '',
-    data: new Date().toISOString().slice(0, 10), // Define a data atual
-    valor: 0, // Inicia o valor numérico como 0
-    valorFormatado: '0,00', // Inicia o campo formatado com "0,00"
+    data: new Date().toISOString().slice(0, 10),
+    valor: 0,
+    valorFormatado: formatNumericValueForInputDisplay(0), // Inicializa com valor formatado
     obs: '',
     categoria: ''
   });
@@ -573,14 +560,13 @@ const closeAddModal = () => {
 };
 
 const openEditModal = (item) => {
-  // Preenche editingEntry com os dados do item clicado
   Object.assign(editingEntry, {
     id: item.id,
     nome: item.nome,
     descricao: item.descricao,
-    data: item.data.toDate().toISOString().slice(0, 10), // Converte timestamp para string de data
+    data: item.data.toDate().toISOString().slice(0, 10),
     valor: item.valor,
-    valorFormatado: formatarValor(item.valor).replace('R$', '').trim(), // Formata para a exibição sem R$
+    valorFormatado: formatNumericValueForInputDisplay(item.valor), // Inicializa com valor formatado
     obs: item.obs,
     categoria: item.categoria
   });
@@ -600,7 +586,6 @@ const cancelarExclusao = () => {
   entryToDelete.value = null;
 };
 
-// --- Funções de Navegação de Mês ---
 const avancarMes = () => {
   if (mesSelecionado.value === 11) {
     mesSelecionado.value = 0;
@@ -619,11 +604,7 @@ const voltarMes = () => {
   }
 };
 
-
-// --- Funções de Formatação e Navegação ---
-// Esta função é usada apenas para exibição dos valores já salvos/calculados
 const formatarValor = (valor) => {
-  // Garante que é um número antes de formatar
   if (typeof valor !== 'number' || isNaN(valor)) return 'R$ 0,00';
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 };
@@ -634,12 +615,9 @@ const formatarData = (timestamp) => {
 };
 
 const voltar = () => {
-  router.push('/home'); // Ou use router.back()
+  router.push('/home');
 };
 
-// --- Watchers e Lifecycle Hooks ---
-
-// Observa mudanças no mês ou ano selecionado para recarregar os lançamentos
 watch([mesSelecionado, anoSelecionado], async () => {
   const userId = auth.currentUser?.uid;
   if (userId) {
@@ -659,13 +637,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/*
- * IMPORTANTE: Para que os ícones do Material Design apareçam,
- * certifique-se de que a seguinte linha esteja no <head> do seu `public/index.html`:
- * <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
- */
-
-/* Estilos Globais/Reset Simplificado */
 body,
 html,
 #app {
@@ -675,8 +646,7 @@ html,
   background-color: #f0f2f5;
   color: #333;
   font-family: 'Roboto', sans-serif;
-  /* Reduz a fonte base do corpo para afetar tudo proporcionalmente */
-  font-size: 0.9em; /* Ajustado de 1em para 0.9em */
+  font-size: 0.9em;
 }
 
 .main-container {
@@ -684,7 +654,7 @@ html,
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start; /* Alinhado ao topo */
+  justify-content: flex-start;
   box-sizing: border-box;
   min-height: 100vh;
   background-color: #f0f2f5;
@@ -693,38 +663,38 @@ html,
 
 .content-card {
   width: 100%;
-  max-width: 360px;
-  padding: 14px; /* Reduzido de 16px */
-  border-radius: 10px; /* Reduzido de 12px */
+  max-width: 340px;
+  padding: 14px;
+  border-radius: 10px;
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
   background-color: #ffffff;
   text-align: center;
-  margin: 0.8rem 0; /* Reduzido de 1rem */
+  margin: 0.8rem 0;
 }
 
 .title-row {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 6px; /* Reduzido de 8px */
-  margin-bottom: 20px; /* Reduzido de 24px */
+  gap: 6px;
+  margin-bottom: 20px;
 }
 
 .title {
-  font-size: 1.8rem; /* Reduzido de 2rem */
+  font-size: 1.8rem;
   font-weight: 700;
   color: #333;
   flex-grow: 1;
   text-align: center;
-  transform: translateX(-18px); /* Ajuste para centralizar visualmente */
+  transform: translateX(-18px);
 }
 
 .back-button {
-  border-radius: 50%; /* Mantido para circular */
-  padding: 3px 8px; /* Reduzido padding */
-  min-width: 30px; /* Reduzido de 32px */
-  min-height: 30px; /* Reduzido de 32px */
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Sombra mais sutil */
+  border-radius: 50%;
+  padding: 3px 8px;
+  min-width: 30px;
+  min-height: 30px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -732,14 +702,13 @@ html,
 }
 
 .back-button .material-icons {
-  font-size: 20px; /* Reduzido de 22px */
+  font-size: 20px;
 }
 
 .back-button:hover {
   background-color: #d0d0d0;
 }
 
-/* --- Navegação de Mês --- */
 .month-navigation {
   display: flex;
   align-items: center;
@@ -781,13 +750,12 @@ html,
   color: #333;
 }
 
-/* --- ESTILOS PARA OS TOTAIS --- */
 .totals-summary {
   display: flex;
   justify-content: space-around;
-  margin-top: 16px; /* Reduzido de 20px */
-  margin-bottom: 16px; /* Reduzido de 20px */
-  padding: 8px 0; /* Reduzido de 10px */
+  margin-top: 16px;
+  margin-bottom: 16px;
+  padding: 8px 0;
   border-top: 1px solid #eee;
   border-bottom: 1px solid #eee;
   background-color: #fdfdfd;
@@ -798,16 +766,16 @@ html,
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 0.9rem; /* Reduzido de 1rem */
+  font-size: 0.9rem;
   font-weight: 500;
   color: #555;
   flex: 1;
 }
 
 .total-item .value {
-  font-size: 1.1rem; /* Reduzido de 1.2rem */
+  font-size: 1.1rem;
   font-weight: 700;
-  margin-top: 3px; /* Reduzido de 4px */
+  margin-top: 3px;
 }
 
 .total-item.entradas .value {
@@ -817,124 +785,183 @@ html,
 .total-item.saidas .value {
   color: #dc3545;
 }
-/* ------------------------------------ */
 
-/* Lista de Lançamentos */
 .lancamentos-list-container {
-  margin-top: 20px; /* Reduzido de 24px */
+  margin-top: 20px;
   width: 100%;
-  max-height: 55vh; /* Ajustado para caber mais itens */
+  max-height: 55vh;
   overflow-y: auto;
-  padding-right: 6px; /* Reduzido de 8px */
+  padding-right: 6px;
 }
 
 .lancamento-item {
   background-color: #f8f9fa;
   border-radius: 8px;
-  padding: 12px; /* Reduzido de 16px */
-  margin-bottom: 8px; /* Reduzido de 12px */
+  padding: 12px;
+  margin-bottom: 8px;
   text-align: left;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .lancamento-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
 }
 
 .item-header {
   display: flex;
   justify-content: space-between;
-  align-items: center; /* Alinha no centro verticalmente */
-  margin-bottom: 6px; /* Reduzido de 8px */
+  align-items: center;
+  margin-bottom: 6px;
 }
 
-/* NOVO ESTILO PARA CATEGORIA NO ITEM */
 .item-category-info {
   display: flex;
   align-items: center;
-  gap: 6px; /* Espaçamento entre ícone e nome da categoria */
-  font-size: 0.9rem; /* Tamanho da fonte da categoria */
+  gap: 6px;
+  font-size: 0.9rem;
   font-weight: 500;
   color: #666;
-  text-transform: uppercase; /* Opcional: deixar em maiúsculas */
+  text-transform: uppercase;
 }
 
 .category-icon {
-  font-size: 1.2rem; /* Tamanho do ícone */
-  color: #007bff; /* Cor do ícone */
+  font-size: 1.2rem;
+  color: #007bff;
 }
 
 .item-nome {
-  font-size: 1rem; /* Reduzido de 1.1rem */
+  font-size: 1rem;
   font-weight: 600;
   color: #333;
-  margin-top: 4px; /* Espaçamento da categoria para o nome */
-  display: block; /* Garante que fique em sua própria linha */
+  margin-top: 4px;
+  display: block;
 }
 
 .item-valor {
-  font-size: 1rem; /* Reduzido de 1.1rem */
+  font-size: 1rem;
   font-weight: 600;
 }
-.item-valor.positivo { color: #28a745; }
-.item-valor.negativo { color: #dc3545; }
+
+.item-valor.positivo {
+  color: #28a745;
+}
+
+.item-valor.negativo {
+  color: #dc3545;
+}
 
 
 .item-body .item-descricao {
-  font-size: 0.85rem; /* Reduzido de 0.95rem */
+  font-size: 0.85rem;
   color: #555;
-  margin-bottom: 6px; /* Reduzido de 8px */
-  line-height: 1.3; /* Levemente ajustado para compactar */
+  margin-bottom: 6px;
+  line-height: 1.3;
 }
+
 .item-body .item-obs {
-  font-size: 0.8rem; /* Reduzido de 0.85rem */
+  font-size: 0.8rem;
   color: #777;
   background-color: #e9ecef;
-  padding: 3px 6px; /* Reduzido de 4px 8px */
+  padding: 3px 6px;
   border-radius: 4px;
   font-style: italic;
 }
 
 .item-footer {
-  margin-top: 10px; /* Reduzido de 12px */
+  margin-top: 10px;
   text-align: right;
 }
 
 .item-data {
-  font-size: 0.75rem; /* Reduzido de 0.8rem */
+  font-size: 0.75rem;
   color: #6c757d;
 }
 
+/* NOVO: Estilos para o grupo de input de valor e botões */
+.value-input-group-container {
+  position: relative;
+  margin-bottom: 20px;
+}
 
-/* Estilos de Formulário */
+.value-input-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.value-input-field {
+  flex-grow: 1;
+  width: auto;
+  padding-right: 5px;
+}
+
+.small-sign-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.small-sign-button:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.small-sign-button .material-icons {
+  font-size: 20px;
+}
+
+.small-sign-button.pos-button {
+  background-color: #28a745;
+  color: #fff;
+}
+.small-sign-button.pos-button:hover {
+  background-color: #218838;
+}
+
+.small-sign-button.neg-button {
+  background-color: #dc3545;
+  color: #fff;
+}
+.small-sign-button.neg-button:hover {
+  background-color: #c82333;
+}
+/* FIM NOVO */
+
+
 .input-container {
   position: relative;
-  margin-bottom: 20px; /* Reduzido de 24px */
+  margin-bottom: 20px;
 }
 
 .text-field {
   width: 100%;
-  padding: 14px 14px 7px 14px; /* Ajuste para o padding */
-  font-size: 0.95rem; /* Levemente menor */
+  padding: 14px 14px 7px 14px;
+  font-size: 0.95rem;
   border: 1px solid #ccc;
   border-radius: 4px;
   background-color: #f9f9f9;
   outline: none;
   box-sizing: border-box;
-  appearance: none; /* Remove estilo padrão do select em alguns browsers */
-}
-textarea.text-field {
-    padding-top: 20px; /* Ajuste para o padding */
-    resize: vertical;
+  appearance: none;
 }
 
-/* NOVO ESTILO PARA SELECT */
+textarea.text-field {
+  padding-top: 20px;
+  resize: vertical;
+}
+
 .text-field.select-field {
-  padding-top: 14px; /* Ajusta padding para o texto do label */
-  height: 48px; /* Altura fixa para alinhar com outros campos */
+  padding-top: 14px;
+  height: 48px;
   background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888888"%3e%3cpath d="M7 10l5 5 5-5z"/%3e%3c/svg%3e');
   background-repeat: no-repeat;
   background-position: right 12px center;
@@ -947,85 +974,146 @@ textarea.text-field {
 
 .label-text {
   position: absolute;
-  left: 14px; /* Ajustado para o padding */
-  top: 14px; /* Ajustado para o padding */
+  left: 14px;
+  top: 14px;
   color: #888;
   pointer-events: none;
   transition: all 0.2s ease;
-  font-size: 0.95rem; /* Levemente menor */
+  font-size: 0.95rem;
 }
 
-.text-field:focus + .label-text,
-.text-field:not(:placeholder-shown) + .label-text {
+.text-field:focus+.label-text,
+.text-field:not(:placeholder-shown)+.label-text {
   top: 4px;
-  font-size: 0.7rem; /* Levemente menor */
-  color: #007bff;
-}
-
-/* Ajuste para o label do select, se necessário */
-.select-label-text {
-  top: 14px; /* Posiciona o label no centro do select */
-}
-
-.text-field:focus + .select-label-text,
-.text-field:not(:placeholder-shown).select-field + .select-label-text {
-  top: 4px; /* move o label para cima quando selecionado */
   font-size: 0.7rem;
   color: #007bff;
 }
 
+.select-label-text {
+  top: 14px;
+}
 
-/* Modais */
+.text-field:focus+.select-label-text,
+.text-field:not(:placeholder-shown).select-field+.select-label-text {
+  top: 4px;
+  font-size: 0.7rem;
+  color: #007bff;
+}
+
 .modal-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
-  display: flex; justify-content: center; align-items: center; z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
 .modal-container {
-  background-color: #ffffff; padding: 20px; /* Reduzido de 24px para 20px */
+  background-color: #ffffff;
+  padding: 20px;
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  width: 90%; max-width: 360px; /* Ligeiramente menor */
+  width: 90%;
+  max-width: 360px;
   text-align: left;
 }
-.section-title {
-  font-size: 1.4rem; /* Reduzido de 1.5rem para 1.4rem */
-  font-weight: 600; color: #333;
-  margin-bottom: 14px; /* Reduzido de 16px para 14px */
-  text-align: center;
-  flex-grow: 1; /* Para centralizar o título na linha de título */
-}
-.modal-text {
-  font-size: 0.95rem; /* Reduzido de 1rem para 0.95rem */
-  color: #555; line-height: 1.4; /* Ajustado para compactar */
-  margin-bottom: 20px; /* Reduzido de 24px para 20px */
-  text-align: center;
-}
-.modal-actions {
-  display: flex; justify-content: flex-end; gap: 6px; /* Reduzido de 8px para 6px */
-  margin-top: 20px; /* Reduzido de 24px para 20px */
-}
-.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
-.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; transform: translateY(20px); }
 
-/* Botões e Mensagens */
+.section-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 14px;
+  text-align: center;
+  flex-grow: 1;
+}
+
+.modal-text {
+  font-size: 0.95rem;
+  color: #555;
+  line-height: 1.4;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 20px;
+}
+
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
 .btn {
-  padding: 8px 20px; /* Ajuste para o padding */
-  font-size: 0.9rem; /* Reduzido de 1rem para 0.9rem */
+  padding: 8px 20px;
+  font-size: 0.9rem;
   font-weight: 500;
-  border: none; border-radius: 8px; /* Ligeiramente menor */
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px; /* Reduzido de 8px para 6px */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
-.add-item-button { width: 100%; }
-.filled-button { background-color: #007bff; color: #ffffff; }
-.filled-button:hover { background-color: #0056b3; }
-.text-button { background-color: transparent; color: #007bff; }
-.text-button:hover { background-color: rgba(0, 123, 255, 0.08); }
-.filled-button-danger { background-color: #dc3545; color: #ffffff; }
-.filled-button-danger:hover { background-color: #c82333; }
-.error-message { color: #dc3545; margin-top: 0.8rem; /* Levemente menor */ font-weight: 500; }
-.no-items-message { padding: 14px; /* Reduzido de 16px */ text-align: center; color: #888; font-style: italic; font-size: 0.9rem; /* Reduzido */ }
+
+.add-item-button {
+  width: 100%;
+}
+
+.filled-button {
+  background-color: #007bff;
+  color: #ffffff;
+}
+
+.filled-button:hover {
+  background-color: #0056b3;
+}
+
+.text-button {
+  background-color: transparent;
+  color: #007bff;
+}
+
+.text-button:hover {
+  background-color: rgba(0, 123, 255, 0.08);
+}
+
+.filled-button-danger {
+  background-color: #dc3545;
+  color: #ffffff;
+}
+
+.filled-button-danger:hover {
+  background-color: #c82333;
+}
+
+.error-message {
+  color: #dc3545;
+  margin-top: 0.8rem;
+  font-weight: 500;
+}
+
+.no-items-message {
+  padding: 14px;
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  font-size: 0.9rem;
+}
 </style>

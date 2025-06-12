@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # prj-financeiro
 
 ## Project setup
@@ -22,3 +23,6 @@ npm run lint
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
+=======
+# prj-financeiro
+>>>>>>> fde006187d0297e4801a21c42238a89006e1a5cf

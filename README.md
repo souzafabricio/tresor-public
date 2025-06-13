@@ -1,3 +1,5 @@
+# Trésor - Controle Financeiro Pessoal 💰  
+
 Este projeto é uma aplicação web progressiva (PWA) intuitiva e eficiente para controle financeiro pessoal. Desenvolvido para funcionar como um "aplicativo" em seu dispositivo, o prj-financeiro utiliza um Service Worker para oferecer uma experiência offline robusta, permitindo que você gerencie suas finanças a qualquer momento, mesmo sem conexão com a internet.
 
 ✨ Destaques e Funcionalidades  
@@ -15,6 +17,9 @@ PWA (Progressive Web App): Implementado para oferecer recursos como instalabilid
 Service Worker: Essencial para o funcionamento offline, cache de assets e gestão eficiente de requisições de rede.
 Chart.js: Biblioteca de JavaScript simples e poderosa para a criação de gráficos interativos e responsivos, ideal para visualizar seus dados financeiros.
 Tailwind CSS: Um framework CSS "utility-first" que permite estilizar a aplicação de forma rápida e altamente personalizável, resultando em um design limpo e moderno.
+
+📱 Acesse e Teste!  
+https://tresor-xi.vercel.app
 
 🚀 Como Rodar o Projeto Localmente  
 Para configurar e executar o prj-financeiro em seu ambiente de desenvolvimento, siga estes passos simples. A instalação é padronizada para projetos Vue.js.

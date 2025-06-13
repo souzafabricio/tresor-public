@@ -3,7 +3,7 @@
     <div class="home-content surface-container-high">
 
       <img src="@/assets/logofundobranco.png" alt="Logo do Sistema" class="logo mb-6" />
-      <p v-if="primeiroNome" class="welcome-message text-on-surface">Olá, <br> {{ primeiroNome }}!</p>
+      <p v-if="primeiroNome" class="welcome-message text-on-surface">Olá, {{ primeiroNome }}!</p>
       <p v-else class="welcome-message text-on-surface">Olá!</p>
 
       <div class="menu-row">
@@ -121,14 +121,14 @@ onMounted(() => {
   max-width: 200px;
   height: auto;
   object-fit: contain;
-  margin-top: -130px;
+  margin-top: -40px;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
 }
 
 .welcome-message {
   font-size: 1.25rem;
-  font-weight: 500;
-  margin-top: -20px;
+  font-weight: 400;
+  margin-top: -60px;
   color: var(--md-sys-color-on-surface-variant);
   text-align: center;
 }

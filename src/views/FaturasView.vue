@@ -676,7 +676,6 @@ html,
 }
 
 .back-button {
-  border-radius: 50%;
   padding: 3px 8px;
   min-width: 30px;
   min-height: 30px;
@@ -885,7 +884,7 @@ html,
   font-size: 0.9rem;
   font-weight: 500;
   border: none;
-  border-radius: 18px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   user-select: none;

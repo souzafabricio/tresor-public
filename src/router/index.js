@@ -50,6 +50,11 @@ const routes = [
     component: () => import('../views/CadastroView.vue')
   },
   {
+    path: '/recuperar-senha',
+    name: 'recuperar-senha',
+    component: () => import('../views/RecuperarSenha.vue')
+  },
+  {
     path: '/ajudaview',
     name: 'ajudaview',
     component: () => import('../views/AjudaView.vue'),
@@ -61,6 +66,12 @@ const routes = [
     component: () => import('../views/SobreView.vue'),
     meta: { requiresAuth: true }
   },
+  {
+    path: '/relatorios',
+    name: 'relatorios',
+    component: () => import('../views/RelatoriosView.vue'),
+    meta: { requiresAuth: true }
+  },
 ]
 
 const router = createRouter({
@@ -68,7 +79,6 @@ const router = createRouter({
   routes
 })
 
-// Aguarda até que o Firebase saiba se há um usuário logado
 function waitForAuthReady() {
   const auth = getAuth()
   return new Promise((resolve) => {
@@ -89,6 +99,8 @@ router.beforeEach(async (to, from, next) => {
 
   if (requiresAuth && !user) {
     next({ name: 'Login' })
+  } else if ((to.path === '/' || to.path === '/cadastro') && user) {
+    next({ name: 'home' })
   } else {
     next()
   }

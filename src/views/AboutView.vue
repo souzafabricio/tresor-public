@@ -75,12 +75,14 @@
 
           <div class="input-container value-input-group-container">
             <div class="value-input-group">
-              <input v-model="newEntry.valorFormatado" type="text" id="valor" class="text-field value-input-field" placeholder=" "
-                inputmode="decimal" pattern="^-?\d*[.,]?\d*$" @focus="handleFocusValor" />
-              <button @click="setEntrySign(newEntry, -1, 'valor')" class="btn small-sign-button neg-button" type="button">
+              <input v-model="newEntry.valorFormatado" type="text" id="valor" class="text-field value-input-field"
+                placeholder=" " inputmode="decimal" pattern="^-?\d*[.,]?\d*$" @focus="handleFocusValor" />
+              <button @click="setEntrySign(newEntry, -1, 'valor')" class="btn small-sign-button neg-button"
+                type="button">
                 <span class="material-icons">remove</span>
               </button>
-              <button @click="setEntrySign(newEntry, 1, 'valor')" class="btn small-sign-button pos-button" type="button">
+              <button @click="setEntrySign(newEntry, 1, 'valor')" class="btn small-sign-button pos-button"
+                type="button">
                 <span class="material-icons">add</span>
               </button>
             </div>
@@ -134,21 +136,21 @@
             <label for="editNome" class="label-text">Nome (ex: Açaí, Dívida Mãe)</label>
           </div>
 
-          <!-- NOVO: Input de Valor com Botões +/- para Edição -->
           <div class="input-container value-input-group-container">
             <div class="value-input-group">
-              <input v-model="editingEntry.valorFormatado" type="text" id="editValor" class="text-field value-input-field" placeholder=" "
-                inputmode="decimal" @focus="handleFocusValor" />
-              <button @click="setEntrySign(editingEntry, -1, 'editValor')" class="btn small-sign-button neg-button" type="button">
+              <input v-model="editingEntry.valorFormatado" type="text" id="editValor"
+                class="text-field value-input-field" inputmode="decimal" @focus="handleFocusValor" />
+              <button @click="setEntrySign(editingEntry, -1, 'editValor')" class="btn small-sign-button neg-button"
+                type="button">
                 <span class="material-icons">remove</span>
               </button>
-              <button @click="setEntrySign(editingEntry, 1, 'editValor')" class="btn small-sign-button pos-button" type="button">
+              <button @click="setEntrySign(editingEntry, 1, 'editValor')" class="btn small-sign-button pos-button"
+                type="button">
                 <span class="material-icons">add</span>
               </button>
             </div>
-            <label for="editValor" class="label-text">Valor</label>
+            <label for="editValor" class="label-text"></label>
           </div>
-          <!-- FIM NOVO -->
 
           <div class="input-container">
             <input v-model="editingEntry.data" type="date" id="editData" class="text-field" placeholder=" " />
@@ -298,7 +300,6 @@ const entryToDelete = ref(null);
 
 const currentActiveModalInputId = ref('');
 
-// Helper para converter string formatada (ex: "1.234,56") para número (ex: 1234.56)
 const parseFormattedInputToNumeric = (inputString) => {
   if (typeof inputString !== 'string') {
     inputString = String(inputString);
@@ -308,7 +309,6 @@ const parseFormattedInputToNumeric = (inputString) => {
 
   if (cleaned === '') return 0;
 
-  // Garante que haja pelo menos dois dígitos para a parte decimal
   while (cleaned.length < 3) {
     cleaned = '0' + cleaned;
   }
@@ -317,19 +317,16 @@ const parseFormattedInputToNumeric = (inputString) => {
   return isNegative ? -Math.abs(numericValue) : Math.abs(numericValue);
 };
 
-// Helper para formatar valor numérico para exibição no campo de input
 const formatNumericValueForInputDisplay = (numericValue) => {
   if (typeof numericValue !== 'number' || isNaN(numericValue)) {
     return '0,00';
   }
-  // Remove o sinal negativo para a formatação, depois o adiciona se necessário
+
   const valueForFormat = Math.abs(numericValue);
   const formatted = valueForFormat.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true });
   return numericValue < 0 ? '-' + formatted : formatted;
 };
 
-
-// Atualiza as funções de watch para usar os novos helpers
 watch(() => newEntry.valorFormatado, (newValue, oldValue) => {
   if (currentActiveModalInputId.value === 'valor') {
     const inputElement = document.getElementById('valor');
@@ -340,7 +337,6 @@ watch(() => newEntry.valorFormatado, (newValue, oldValue) => {
     newEntry.valor = newNumericValue;
     const formattedValue = formatNumericValueForInputDisplay(newNumericValue);
 
-    // Evita loop infinito: só atualiza o v-model se houver diferença real na string formatada
     if (newEntry.valorFormatado !== formattedValue) {
       newEntry.valorFormatado = formattedValue;
     }
@@ -376,11 +372,9 @@ watch(() => editingEntry.valorFormatado, (newValue, oldValue) => {
 const calculateNewCaretPosition = (oldValue, newValue, oldCaretPosition) => {
   let newCaretPosition = oldCaretPosition;
 
-  // Lógica de ajuste do cursor baseada na diferença de tamanho da string
   const diff = newValue.length - oldValue.length;
   newCaretPosition += diff;
 
-  // Ajuste especial para quando o sinal negativo é adicionado/removido na posição 0
   if (oldValue.startsWith('-') && !newValue.startsWith('-')) {
     newCaretPosition = Math.max(0, newCaretPosition - 1);
   } else if (!oldValue.startsWith('-') && newValue.startsWith('-') && oldCaretPosition === 0) {
@@ -390,33 +384,26 @@ const calculateNewCaretPosition = (oldValue, newValue, oldCaretPosition) => {
   return Math.min(Math.max(0, newCaretPosition), newValue.length);
 };
 
-// Nova função para definir o sinal do valor com base nos botões
 const setEntrySign = (entryRef, sign, inputId) => {
-    currentActiveModalInputId.value = inputId; // Define o ID do input ativo para o watch
+  currentActiveModalInputId.value = inputId;
 
-    // Pega o valor numérico absoluto atual
-    const currentNumericValue = Math.abs(entryRef.valor);
-    // Aplica o novo sinal
-    const newNumericValue = sign * currentNumericValue;
+  const currentNumericValue = Math.abs(entryRef.valor);
+  const newNumericValue = sign * currentNumericValue;
 
-    // Atualiza o valor numérico
-    entryRef.valor = newNumericValue;
-    // Atualiza a string formatada para exibição no input
-    entryRef.valorFormatado = formatNumericValueForInputDisplay(newNumericValue);
+  entryRef.valor = newNumericValue;
+  entryRef.valorFormatado = formatNumericValueForInputDisplay(newNumericValue);
 
-    // Garante que o input mantenha o foco e o cursor no final
-    nextTick(() => {
-        const inputElement = document.getElementById(inputId);
-        if (inputElement) {
-            inputElement.focus();
-            inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length);
-        }
-    });
+  nextTick(() => {
+    const inputElement = document.getElementById(inputId);
+    if (inputElement) {
+      inputElement.focus();
+      inputElement.setSelectionRange(inputElement.value.length, inputElement.value.length);
+    }
+  });
 };
 
 const handleFocusValor = (event) => {
   currentActiveModalInputId.value = event.target.id;
-  // Quando foca, seleciona todo o texto se for "0,00" ou "-0,00" para facilitar a digitação
   if (event.target.value === '0,00' || event.target.value === '-0,00') {
     event.target.setSelectionRange(0, event.target.value.length);
   }
@@ -445,7 +432,6 @@ const carregarLancamentos = async (userId) => {
 const adicionarLancamento = async () => {
   modalError.value = '';
 
-  // Garante que newEntry.valor esteja atualizado a partir do valorFormatado antes da validação
   newEntry.valor = parseFormattedInputToNumeric(newEntry.valorFormatado);
 
   if (!newEntry.nome || !newEntry.descricao || newEntry.valor === null || isNaN(newEntry.valor) || !newEntry.data || !newEntry.categoria) {
@@ -453,7 +439,6 @@ const adicionarLancamento = async () => {
     return;
   }
 
-  // Se o valor formatado for uma string vazia ou consistir apenas de caracteres não numéricos (ex: "-", ".", ","), considera inválido.
   if (newEntry.valor === 0 && newEntry.valorFormatado.replace(/[^0-9]/g, '') === '') {
     modalError.value = 'O valor inserido não é válido.';
     return;
@@ -462,24 +447,23 @@ const adicionarLancamento = async () => {
   try {
     const userId = auth.currentUser.uid;
     const dateParts = newEntry.data.split('-').map(Number);
-    const dateToSave = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], 12, 0, 0);
+    const dateToSave = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+    dateToSave.setHours(0, 0, 0, 0);
+
 
     await addDoc(collection(db, 'lancamentos'), {
       userId,
       nome: newEntry.nome,
       descricao: newEntry.descricao,
       data: dateToSave,
-      valor: Number(newEntry.valor), // Usa o valor numérico processado
+      valor: Number(newEntry.valor),
       obs: newEntry.obs,
       categoria: newEntry.categoria,
       criadoEm: new Date(),
     });
 
     closeAddModal();
-    const entryDate = new Date(newEntry.data);
-    if (entryDate.getFullYear() === anoSelecionado.value && entryDate.getMonth() === mesSelecionado.value) {
-      await carregarLancamentos(userId);
-    }
+    await carregarLancamentos(userId);
 
   } catch (e) {
     console.error('Erro ao adicionar lançamento:', e);
@@ -490,14 +474,12 @@ const adicionarLancamento = async () => {
 const salvarEdicao = async () => {
   modalError.value = '';
 
-  // Garante que editingEntry.valor esteja atualizado a partir do valorFormatado antes da validação
   editingEntry.valor = parseFormattedInputToNumeric(editingEntry.valorFormatado);
 
   if (!editingEntry.nome || !editingEntry.descricao || editingEntry.valor === null || isNaN(editingEntry.valor) || !editingEntry.data || !editingEntry.categoria) {
     modalError.value = 'Preencha todos os campos obrigatórios (Nome, Valor, Data, Descrição e Categoria).';
     return;
   }
-  // Se o valor formatado for uma string vazia ou consistir apenas de caracteres não numéricos, considera inválido.
   if (editingEntry.valor === 0 && editingEntry.valorFormatado.replace(/[^0-9]/g, '') === '') {
     modalError.value = 'O valor inserido não é válido.';
     return;
@@ -506,13 +488,13 @@ const salvarEdicao = async () => {
   try {
     const lancamentoRef = doc(db, 'lancamentos', editingEntry.id);
     const dateParts = editingEntry.data.split('-').map(Number);
-    const dateToSave = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], 12, 0, 0);
+    const dateToSave = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+    dateToSave.setHours(0, 0, 0, 0);
 
     await updateDoc(lancamentoRef, {
       nome: editingEntry.nome,
       descricao: editingEntry.descricao,
       data: dateToSave,
-      valor: Number(editingEntry.valor), // Usa o valor numérico processado
       obs: editingEntry.obs,
       categoria: editingEntry.categoria,
       atualizadoEm: new Date(),
@@ -542,12 +524,17 @@ const excluirLancamento = async () => {
 };
 
 const openAddModal = () => {
+  const ano = anoSelecionado.value;
+  const mes = mesSelecionado.value;
+
+  const dataDoMesSelecionado = new Date(ano, mes, 1);
+
   Object.assign(newEntry, {
     nome: '',
     descricao: '',
-    data: new Date().toISOString().slice(0, 10),
+    data: dataDoMesSelecionado.toISOString().slice(0, 10),
     valor: 0,
-    valorFormatado: formatNumericValueForInputDisplay(0), // Inicializa com valor formatado
+    valorFormatado: formatNumericValueForInputDisplay(0),
     obs: '',
     categoria: ''
   });
@@ -566,7 +553,7 @@ const openEditModal = (item) => {
     descricao: item.descricao,
     data: item.data.toDate().toISOString().slice(0, 10),
     valor: item.valor,
-    valorFormatado: formatNumericValueForInputDisplay(item.valor), // Inicializa com valor formatado
+    valorFormatado: formatNumericValueForInputDisplay(item.valor),
     obs: item.obs,
     categoria: item.categoria
   });
@@ -880,7 +867,6 @@ html,
   color: #6c757d;
 }
 
-/* NOVO: Estilos para o grupo de input de valor e botões */
 .value-input-group-container {
   position: relative;
   margin-bottom: 20px;
@@ -923,6 +909,7 @@ html,
   background-color: #28a745;
   color: #fff;
 }
+
 .small-sign-button.pos-button:hover {
   background-color: #218838;
 }
@@ -931,11 +918,10 @@ html,
   background-color: #dc3545;
   color: #fff;
 }
+
 .small-sign-button.neg-button:hover {
   background-color: #c82333;
 }
-/* FIM NOVO */
-
 
 .input-container {
   position: relative;

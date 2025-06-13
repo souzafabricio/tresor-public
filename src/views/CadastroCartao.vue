@@ -5,12 +5,16 @@
       <div class="title-row">
         <h1 class="title">Novo Cartão</h1>
       </div>
-      
+
       <div class="input-container">
         <input v-model="banco" type="text" id="banco" class="text-field" placeholder=" " />
         <label for="banco" class="label-text">Banco (ex: Bradesco)</label>
       </div>
 
+      <div class="input-container">
+        <input v-model="numeroCartao" @input="formatarNumeroCartao" maxlength="19" type="text" inputmode="decimal"
+          class="text-field" placeholder="Número do cartão" />
+      </div>
       <div class="input-container">
         <input v-model="fechamento" type="number" id="fechamento" class="text-field" placeholder=" " />
         <label for="fechamento" class="label-text">Dia do fechamento</label>
@@ -20,7 +24,7 @@
         <input v-model="vencimento" type="number" id="vencimento" class="text-field" placeholder=" " />
         <label for="vencimento" class="label-text">Dia do vencimento</label>
       </div>
-      
+
       <p v-if="erro" class="error-message">{{ erro }}</p>
       <p v-if="sucesso" class="success-message">Cartão cadastrado com sucesso!</p>
 
@@ -44,53 +48,63 @@ const auth = getAuth();
 const router = useRouter();
 
 const banco = ref('');
+const numeroCartao = ref('');
 const fechamento = ref('');
 const vencimento = ref('');
 const erro = ref('');
 const sucesso = ref(false);
 
+
 const cadastrarCartao = async () => {
-    erro.value = '';
-    sucesso.value = false;
+  erro.value = '';
+  sucesso.value = false;
 
-    if (!banco.value || !fechamento.value || !vencimento.value) {
-        erro.value = 'Preencha todos os campos.';
-        return;
+  if (!banco.value || !numeroCartao.value || !fechamento.value || !vencimento.value) {
+    erro.value = 'Preencha todos os campos.';
+    return;
+  }
+
+  if (fechamento.value < 1 || fechamento.value > 31 || vencimento.value < 1 || vencimento.value > 31) {
+    erro.value = 'Os dias devem estar entre 1 e 31.';
+    return;
+  }
+
+  try {
+    if (!auth.currentUser) {
+      erro.value = 'Usuário não autenticado. Faça login novamente.';
+      router.push('/');
+      return;
     }
-    
-    if (fechamento.value < 1 || fechamento.value > 31 || vencimento.value < 1 || vencimento.value > 31) {
-        erro.value = 'Os dias devem estar entre 1 e 31.';
-        return;
-    }
 
-    try {
-        if (!auth.currentUser) {
-            erro.value = 'Usuário não autenticado. Faça login novamente.';
-            router.push('/');
-            return;
-        }
+    await addDoc(collection(db, 'cartoes'), {
+      banco: banco.value,
+      numero: numeroCartao.value,
+      fechamento: Number(fechamento.value),
+      vencimento: Number(vencimento.value),
+      userId: auth.currentUser.uid,
+      criadoEm: new Date(),
+    });
 
-        await addDoc(collection(db, 'cartoes'), {
-            banco: banco.value,
-            fechamento: Number(fechamento.value),
-            vencimento: Number(vencimento.value),
-            userId: auth.currentUser.uid,
-            criadoEm: new Date(),
-        });
+    sucesso.value = true;
+    setTimeout(() => {
+      router.push('/CartoesView');
+    }, 800);
 
-        sucesso.value = true;
-        setTimeout(() => {
-            router.push('/CartoesView');
-        }, 800);
-
-    } catch (e) {
-        erro.value = 'Erro ao salvar o cartão.';
-        console.error('Erro Firebase:', e);
-    }
+  } catch (e) {
+    erro.value = 'Erro ao salvar o cartão.';
+    console.error('Erro Firebase:', e);
+  }
 };
 
+function formatarNumeroCartao(e) {
+  let valor = e.target.value.replace(/\D/g, '')
+  valor = valor.slice(0, 16)
+  valor = valor.replace(/(.{4})/g, '$1 ').trim()
+  numeroCartao.value = valor
+}
+
 const voltar = () => {
-    router.push('/CartoesView');
+  router.push('/CartoesView');
 };
 </script>
 
@@ -133,7 +147,7 @@ const voltar = () => {
   padding: 4px 10px;
   min-width: 32px;
   min-height: 32px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -191,8 +205,8 @@ const voltar = () => {
   font-size: 1rem;
 }
 
-.text-field:focus + .label-text,
-.text-field:not(:placeholder-shown) + .label-text {
+.text-field:focus+.label-text,
+.text-field:not(:placeholder-shown)+.label-text {
   top: 4px;
   font-size: 0.75rem;
   color: #007bff;

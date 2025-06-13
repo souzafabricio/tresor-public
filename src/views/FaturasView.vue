@@ -30,7 +30,6 @@
       </div>
 
       <div v-if="idCartao" class="invoice-details-card">
-
         <h2 class="section-title">Itens da Fatura</h2>
         <ul v-if="itensFatura.length > 0" class="invoice-items-list">
           <li v-for="item in itensFatura" :key="item.id" class="invoice-item" @click="openEditModal(item)"
@@ -40,33 +39,26 @@
               <span>Data: {{ formatarData(item.data) }}</span>
               <span class="item-value">R$ {{ item.valor.toFixed(2).replace('.', ',') }}</span>
             </div>
-            <!-- Ícone da categoria adicionado aqui -->
+
             <div class="item-category">
               <span class="material-icons category-icon-small">{{ getCategoryIcon(item.categoriaId) }}</span>
               Categoria: {{ getCategoryName(item.categoriaId) }}
             </div>
           </li>
         </ul>
-
         <p v-else class="no-items-message">Nenhum item cadastrado para este mês.</p>
-
         <button @click="openAddItemModal" class="btn filled-button add-item-button">
           <span class="material-icons">add</span> Adicionar Item
         </button>
-
         <hr class="divider" />
-
         <div class="total-section">
           Total da fatura: <span class="total-value">R$ {{ valorTotal.toFixed(2).replace('.', ',') }}</span>
         </div>
-
       </div>
-
       <p v-if="erro" class="error-message">{{ erro }}</p>
       <p v-if="sucesso" class="success-message">{{ sucesso }}</p>
     </div>
 
-    <!-- Modal para Adicionar Novo Item -->
     <Transition name="modal-fade">
       <div v-if="showAddItemModal" class="modal-overlay" @click.self="closeAddItemModal">
         <div class="modal-container">
@@ -97,9 +89,7 @@
             </select>
             <label for="addCategoria" class="label-text select-label-text">Categoria</label>
           </div>
-
           <p v-if="modalError" class="error-message">{{ modalError }}</p>
-
           <div class="modal-actions">
             <button @click="closeAddItemModal" class="btn text-button">Cancelar</button>
             <button @click="confirmAddItem" class="btn filled-button">Adicionar</button>
@@ -108,7 +98,6 @@
       </div>
     </Transition>
 
-    <!-- Modal para Editar Item -->
     <Transition name="modal-fade">
       <div v-if="showEditModal" class="modal-overlay" @click.self="closeEditModal">
         <div class="modal-container">
@@ -125,8 +114,8 @@
           </div>
 
           <div class="input-container">
-            <input v-model="editingValorInputDisplay" type="text" inputmode="decimal" class="text-field"
-              id="editValor" placeholder=" " @input="handleEditingValorInput" @focus="clearEditingPlaceholder"
+            <input v-model="editingValorInputDisplay" type="text" inputmode="decimal" class="text-field" id="editValor"
+              placeholder=" " @input="handleEditingValorInput" @focus="clearEditingPlaceholder"
               @blur="addEditingPlaceholder" />
             <label for="editValor" class="label-text">Valor</label>
           </div>
@@ -145,9 +134,7 @@
             </select>
             <label for="editCategoria" class="label-text select-label-text">Categoria</label>
           </div>
-
           <p v-if="modalError" class="error-message">{{ modalError }}</p>
-
           <div class="modal-actions">
             <button @click="confirmarExclusao(editingItem)" class="btn filled-button-danger">Excluir</button>
             <button @click="salvarEdicao" class="btn filled-button">Salvar</button>
@@ -156,7 +143,6 @@
       </div>
     </Transition>
 
-    <!-- Modal de Confirmação de Exclusão -->
     <Transition name="modal-fade">
       <div v-if="itemToDelete" class="modal-overlay" @click.self="cancelarExclusao">
         <div class="modal-container">
@@ -171,7 +157,6 @@
         </div>
       </div>
     </Transition>
-
   </div>
 </template>
 
@@ -192,7 +177,6 @@ const itensFatura = ref([])
 const erro = ref('')
 const sucesso = ref('')
 
-// Categorias disponíveis (mantidas as mesmas do componente de Lançamentos)
 const categoriasDisponiveis = ref([
   { id: 'salario', nome: 'Salário', icon: 'payments' },
   { id: 'essencial', nome: 'Essencial', icon: 'home' },
@@ -209,7 +193,7 @@ const categoriasDisponiveis = ref([
   { id: 'pets', nome: 'Pets', icon: 'pets' },
   { id: 'imprevistos', nome: 'Imprevistos', icon: 'crisis_alert' },
   { id: 'investimentos', nome: 'Investimentos', icon: 'trending_up' },
-  { id: 'outros', icon: 'category' }
+  { id: 'outros', nome: 'Outros', icon: 'category' }
 ]);
 
 const showAddItemModal = ref(false)
@@ -220,7 +204,7 @@ const newItem = reactive({
   categoriaId: ''
 })
 
-const valorInputDisplay = ref(''); // Para o input de valor no modal de adição
+const valorInputDisplay = ref('');
 
 const showEditModal = ref(false);
 const editingItem = reactive({
@@ -230,9 +214,9 @@ const editingItem = reactive({
   data: '',
   categoriaId: ''
 });
-const editingValorInputDisplay = ref(''); // Para o input de valor no modal de edição
+const editingValorInputDisplay = ref('');
 
-const itemToDelete = ref(null); // Ref para o item a ser excluído no modal de confirmação
+const itemToDelete = ref(null);
 
 const modalError = ref('')
 
@@ -249,19 +233,16 @@ const valorTotal = computed(() => {
   return itensFatura.value.reduce((acc, item) => acc + Number(item.valor), 0)
 })
 
-// Função para obter o nome da categoria
 const getCategoryName = (categoryId) => {
   const category = categoriasDisponiveis.value.find(cat => cat.id === categoryId);
   return category ? category.nome : 'Não categorizado';
 };
 
-// Função para obter o ícone da categoria
 const getCategoryIcon = (categoryId) => {
   const category = categoriasDisponiveis.value.find(cat => cat.id === categoryId);
   return category ? category.icon : 'category'; // 'category' é um ícone padrão
 };
 
-// Funções para formatação de valor no modal de ADIÇÃO
 const handleValorInput = () => {
   let rawValue = valorInputDisplay.value.replace(/\D/g, '');
 
@@ -289,7 +270,6 @@ const handleValorInput = () => {
   nextTick(() => {
     const inputElement = document.getElementById('addValor');
     if (inputElement) {
-      // Ajuste para posicionar o cursor no final do campo
       inputElement.setSelectionRange(valorInputDisplay.value.length, valorInputDisplay.value.length);
     }
   });
@@ -308,8 +288,6 @@ const addPlaceholder = (event) => {
   }
 };
 
-
-// Funções para formatação de valor no modal de EDIÇÃO
 const handleEditingValorInput = () => {
   let rawValue = editingValorInputDisplay.value.replace(/\D/g, '');
 
@@ -354,7 +332,6 @@ const addEditingPlaceholder = (event) => {
     editingItem.valor = 0;
   }
 };
-
 
 const carregarCartoes = async (userId) => {
   erro.value = ''
@@ -416,24 +393,21 @@ const carregarItensFatura = async () => {
   }
 }
 
-// Função para abrir o modal de adição
 const openAddItemModal = () => {
   showAddItemModal.value = true
   newItem.descricao = ''
   newItem.valor = 0
-  valorInputDisplay.value = '0,00' // Define o valor formatado inicial
+  valorInputDisplay.value = '0,00'
   newItem.data = new Date().toISOString().slice(0, 10)
   newItem.categoriaId = ''
   modalError.value = ''
 }
 
-// Função para fechar o modal de adição
 const closeAddItemModal = () => {
   showAddItemModal.value = false
   modalError.value = ''
 }
 
-// Função para confirmar a adição de um item
 const confirmAddItem = async () => {
   if (!newItem.descricao || newItem.valor === null || !newItem.data || !newItem.categoriaId) {
     modalError.value = 'Preencha todos os campos.'
@@ -467,7 +441,7 @@ const confirmAddItem = async () => {
         idCartao: idCartao.value,
         mesReferencia: mesReferenciaStr(anoSelecionado.value, mesSelecionado.value),
         anoReferencia: anoSelecionado.value,
-        valor: 0, // Valor inicial da fatura
+        valor: 0,
         userId,
         criadoEm: new Date()
       })
@@ -485,7 +459,8 @@ const confirmAddItem = async () => {
       valor: newItem.valor,
       data: dateToSave,
       categoriaId: newItem.categoriaId,
-      userId
+      userId,
+      cartaoId: idCartao.value
     })
 
     sucesso.value = 'Item adicionado com sucesso!'
@@ -498,7 +473,6 @@ const confirmAddItem = async () => {
   }
 }
 
-// Funções para o modal de EDIÇÃO
 const openEditModal = (item) => {
   Object.assign(editingItem, {
     id: item.id,
@@ -554,7 +528,6 @@ const salvarEdicao = async () => {
   }
 };
 
-// Funções para o modal de CONFIRMAÇÃO DE EXCLUSÃO
 const confirmarExclusao = (item) => {
   itemToDelete.value = item;
 };
@@ -574,15 +547,14 @@ const excluirItemConfirmado = async () => {
 
     sucesso.value = 'Item excluído com sucesso!';
     setTimeout(() => { sucesso.value = '' }, 3000);
-    cancelarExclusao(); // Fecha o modal de confirmação
-    closeEditModal();   // Fecha o modal de edição (se estiver aberto)
+    cancelarExclusao();
+    closeEditModal();
     await carregarItensFatura();
   } catch (e) {
     erro.value = 'Erro ao excluir o item.';
     console.error('Erro ao excluir item:', e);
   }
 };
-
 
 const formatarData = (timestamp) => {
   if (!timestamp) return ''
@@ -631,7 +603,7 @@ watch([idCartao, mesSelecionado, anoSelecionado], () => {
 })
 
 watch(idCartao, (novoValor, valorAntigo) => {
-  if (novoValor && novoValor !== valorAntigo) { // Apenas resetar se um novo cartão for selecionado
+  if (novoValor && novoValor !== valorAntigo) {
     const dataAtual = new Date();
     mesSelecionado.value = dataAtual.getMonth();
     anoSelecionado.value = dataAtual.getFullYear();
@@ -830,11 +802,11 @@ html,
   margin-top: 2px;
   display: flex;
   align-items: center;
-  gap: 4px; /* Espaçamento entre o ícone e o texto da categoria */
+  gap: 4px;
 }
 
 .category-icon-small {
-  font-size: 0.9em; /* Tamanho pequeno para o ícone na lista */
+  font-size: 0.9em;
   color: #007bff;
 }
 
@@ -1001,7 +973,6 @@ html,
   transform: translateY(20px);
 }
 
-/* Estilos de input (floating label) copiados do componente Lançamentos */
 .input-container {
   position: relative;
   margin-bottom: 20px;
@@ -1030,6 +1001,7 @@ html,
   box-sizing: border-box;
   appearance: none;
 }
+
 textarea.text-field {
   padding-top: 20px;
   resize: vertical;
@@ -1058,8 +1030,8 @@ textarea.text-field {
   font-size: 0.95rem;
 }
 
-.text-field:focus + .label-text,
-.text-field:not(:placeholder-shown) + .label-text {
+.text-field:focus+.label-text,
+.text-field:not(:placeholder-shown)+.label-text {
   top: 4px;
   font-size: 0.7rem;
   color: #007bff;
@@ -1069,15 +1041,17 @@ textarea.text-field {
   top: 14px;
 }
 
-.text-field:focus + .select-label-text,
-.text-field:not(:placeholder-shown).select-field + .select-label-text {
+.text-field:focus+.select-label-text,
+.text-field:not(:placeholder-shown).select-field+.select-label-text {
   top: 4px;
   font-size: 0.7rem;
   color: #007bff;
 }
+
 .modal-text {
   font-size: 0.95rem;
-  color: #555; line-height: 1.4;
+  color: #555;
+  line-height: 1.4;
   margin-bottom: 20px;
   text-align: center;
 }

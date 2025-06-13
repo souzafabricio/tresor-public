@@ -35,6 +35,10 @@
           <span class="material-icons">receipt_long</span>
           Faturas
         </button>
+        <button @click="goToRelatorios" class="btn filled-button nav-button">
+          <span class="material-icons">grading</span>
+          Relatórios
+        </button>
       </nav>
 
       <button @click="logout" class="btn filled-button logout-button">
@@ -54,6 +58,7 @@ const router = useRouter();
 const primeiroNome = ref('');
 const goToAjuda = () => router.push('/ajudaview');
 const goToSobreApp = () => router.push('/sobreview');
+const goToRelatorios = () => router.push('/relatorios');
 
 const logout = async () => {
   try {

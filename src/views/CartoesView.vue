@@ -26,13 +26,16 @@
           Cadastrar Novo Cartão
         </router-link>
 
-        <div v-for="cartao in cartoes" :key="cartao.id" class="cartao-item">
+        <div v-for="cartao in cartoes" :key="cartao.id" class="cartao-item"
+          @click="toggleCardNumberVisibility(cartao.id)">
           <div class="cartao-info">
             <div class="banco">{{ cartao.banco }}</div>
-            <div class="card-number">**** **** **** {{ cartao.numeroCartao ? cartao.numeroCartao.slice(-4) : 'XXXX' }}</div>
+            <div class="card-number">
+              {{ visibleCardId === cartao.id ? formatCardNumber(cartao.numero) : maskCardNumber(cartao.numero) }}
+            </div>
             <div class="datas">Fechamento: dia {{ cartao.fechamento }} | Vencimento: dia {{ cartao.vencimento }}</div>
           </div>
-          <button @click="confirmarExclusao(cartao)" class="btn-excluir" title="Excluir cartão">
+          <button @click.stop="confirmarExclusao(cartao)" class="btn-excluir" title="Excluir cartão">
             <span class="material-icons">delete_outline</span>
           </button>
         </div>
@@ -47,7 +50,8 @@
         <div class="modal-container">
           <h2 class="section-title">Confirmar Exclusão</h2>
           <p class="modal-text">
-            Ao excluir o cartão <strong>{{ cartaoParaExcluir.banco }}</strong>, todas as faturas e itens relacionados também serão excluídos permanentemente. Deseja continuar?
+            Ao excluir o cartão <strong>{{ cartaoParaExcluir.banco }}</strong>, todas as faturas e itens relacionados
+            também serão excluídos permanentemente. Deseja continuar?
           </p>
           <div class="modal-actions">
             <button @click="cancelarExclusao" class="btn text-button">Cancelar</button>
@@ -72,6 +76,7 @@ const router = useRouter();
 const erro = ref('');
 const cartoes = ref([]);
 const cartaoParaExcluir = ref(null);
+const visibleCardId = ref(null);
 
 const carregarCartoes = async () => {
   try {
@@ -88,9 +93,6 @@ const carregarCartoes = async () => {
   }
 };
 
-/**
- * @param {object} cartao -
- */
 const confirmarExclusao = (cartao) => {
   cartaoParaExcluir.value = cartao;
 };
@@ -137,6 +139,41 @@ const voltar = () => {
   router.push('/home');
 };
 
+/*
+ * @param {string} cardId
+ */
+const toggleCardNumberVisibility = (cardId) => {
+  if (visibleCardId.value === cardId) {
+    visibleCardId.value = null;
+  } else {
+    visibleCardId.value = cardId;
+  }
+};
+
+/**
+ * @param {string} number
+ * @returns {string}
+ */
+const formatCardNumber = (number) => {
+  if (!number) return 'XXXX XXXX XXXX XXXX';
+  return String(number).replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim();
+};
+
+/**
+ * @param {string} number
+ * @returns {string}
+ */
+const maskCardNumber = (number) => {
+  if (!number) return '**** **** **** XXXX';
+  const cleanNumber = String(number).replace(/\D/g, '');
+  if (cleanNumber.length <= 4) {
+    return '**** **** **** ' + cleanNumber.padEnd(4, 'X');
+  }
+  const lastFour = cleanNumber.slice(-4);
+  return `**** **** **** ${lastFour}`;
+};
+
+
 onMounted(() => {
   carregarCartoes();
 });
@@ -163,7 +200,7 @@ html,
   box-sizing: border-box;
   min-height: 100vh;
   background-color: #f0f2f5;
-  
+
 }
 
 .content-card {
@@ -175,7 +212,7 @@ html,
   background-color: #ffffff;
   text-align: center;
   margin: 1rem 0;
-  min-height: 150vh;
+  min-height: 5vh;
 }
 
 .title-row {
@@ -195,7 +232,7 @@ html,
   padding: 4px 10px;
   min-width: 32px;
   min-height: 32px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -266,10 +303,11 @@ html,
   margin-bottom: 0;
   border-radius: 8px;
   background: linear-gradient(135deg, #f8f9fa, #eef1f5);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   border: 1px solid #e5e5e5;
   text-align: left;
   position: relative;
+  cursor: pointer;
 }
 
 .cartao-info .banco {

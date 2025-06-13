@@ -14,14 +14,14 @@
       </div>
 
       <div class="button-group">
-        <button @click="loginEmail" class="btn filled-button">Acessar</button>
-        <button class="btn outlined-button" @click="irParaCadastro">Cadastre-se</button>
+        <button class="btn filled-button" @click="loginEmail">Acessar</button>
+        <button class="btn filled-button" @click="irParaCadastro">Cadastre-se</button>
+        <button class="btn recuperacao" @click="irParaRecuperacao">Esqueci minha senha</button>
         <!-- <button @click="loginGoogle" class="btn filled-button google-button">
           <img src="@/assets/google_logo.svg" alt="Google Logo" class="google-icon" />
           Entrar com Google
         </button> -->
       </div>
-
       <p v-if="error" class="text-error mt-4">{{ error }}</p>
     </div>
   </div>
@@ -41,7 +41,6 @@ const password = ref('');
 const error = ref('');
 const router = useRouter();
 
-
 const loginEmail = async () => {
   console.log('Função login com e-mail chamada');
   try {
@@ -54,7 +53,6 @@ const loginEmail = async () => {
     error.value = getFriendlyErrorMessage(err);
   }
 };
-
 
 /*
  --- FUNÇÃO DE LOGIN COM GOOGLE ---
@@ -77,6 +75,10 @@ const irParaCadastro = () => {
   router.push('/cadastro');
 };
 
+const irParaRecuperacao = () => {
+  router.push('/recuperar-senha');
+};
+
 onMounted(async () => {
   try {
     const result = await getRedirectResult(auth);
@@ -95,7 +97,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-body, html, #app {
+body,
+html,
+#app {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -190,8 +194,8 @@ h1 {
   font-size: 1rem;
 }
 
-.text-field:focus + .label-text,
-.text-field:not(:placeholder-shown) + .label-text {
+.text-field:focus+.label-text,
+.text-field:not(:placeholder-shown)+.label-text {
   top: 4px;
   font-size: 0.75rem;
   color: var(--md-sys-color-primary);
@@ -253,22 +257,12 @@ h1 {
   border-color: var(--md-sys-color-primary);
 }
 
-.google-button {
-  background-color: #4285F4;
-  color: white;
-}
-
-.google-button:hover {
-  background-color: #357AE8;
-}
-
-.google-button:active {
-  background-color: #2D6AD2;
-}
-
-.google-icon {
-  width: 18px;
-  height: 18px;
+.recuperacao {
+  background-color: transparent;
+  color: var(--md-sys-color-primary);
+  border: none;
+  text-decoration: underline;
+  font-size: 0.875rem;
 }
 
 .text-error {

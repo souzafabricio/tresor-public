@@ -18,7 +18,8 @@
         <label for="password-reg" class="label-text">Senha</label>
       </div>
       <div class="input-container">
-        <input v-model="confirmPassword" type="password" placeholder="Confirme a Senha" class="text-field" id="confirm-password-reg" />
+        <input v-model="confirmPassword" type="password" placeholder="Confirme a Senha" class="text-field"
+          id="confirm-password-reg" />
         <label for="confirm-password-reg" class="label-text">Confirme a Senha</label>
       </div>
 
@@ -29,10 +30,19 @@
       <p v-if="error" class="text-error mt-4">{{ error }}</p>
     </div>
   </div>
+  <div v-if="sucesso" class="modal-success-overlay">
+    <div class="modal-success-content">
+      <span class="material-icons" style="font-size: 2.5em; color: #43a047;">check_circle</span>
+      <div class="modal-success-text">
+        🎉 Cadastro realizado com sucesso!<br>
+        Você será redirecionado para a tela inicial.
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase.js';
@@ -45,7 +55,14 @@ const password = ref('');
 const confirmPassword = ref('');
 const error = ref('');
 const router = useRouter();
+const sucesso = ref('');
 
+watch(sucesso, (newValue, oldValue) => {
+  console.log('Valor de "sucesso" mudou de:', oldValue, 'para:', newValue);
+  if (newValue) {
+    console.log('Variável "sucesso" foi definida:', newValue);
+  }
+});
 
 function capitalizarNomeCompleto(nome) {
   return nome
@@ -58,6 +75,7 @@ function capitalizarNomeCompleto(nome) {
 
 const register = async () => {
   error.value = '';
+  sucesso.value = '';
 
   if (!name.value || !email.value || !password.value || !confirmPassword.value) {
     error.value = 'Por favor, preencha todos os campos.';
@@ -71,7 +89,6 @@ const register = async () => {
 
   try {
     const nomeFormatado = capitalizarNomeCompleto(name.value);
-
     const userCredential = await createUserWithEmailAndPassword(auth, email.value, password.value);
     const user = userCredential.user;
 
@@ -86,10 +103,15 @@ const register = async () => {
     });
 
     console.log('Usuário registrado e perfil atualizado:', user);
-    router.push('/home');
+    sucesso.value = 'Cadastro realizado com sucesso! Redirecionando...';
+
+    setTimeout(() => {
+      router.push('/home');
+    }, 2000);
   } catch (err) {
     console.error('Erro no registro:', err);
     error.value = getFriendlyErrorMessage(err);
+    sucesso.value = '';
   }
 };
 
@@ -107,7 +129,7 @@ const voltarLogin = () => {
   min-height: 100vh;
   padding: 16px;
   box-sizing: border-box;
-  background-color: var(--md-sys-color-background); 
+  background-color: var(--md-sys-color-background);
   color: var(--md-sys-color-on-background);
   font-family: 'Roboto', sans-serif;
 }
@@ -116,8 +138,8 @@ const voltarLogin = () => {
   width: 100%;
   max-width: 200px;
   object-fit: contain;
-  margin-bottom: 1rem;
-  margin-top: -10rem;
+  margin-bottom: -1rem;
+  margin-top: -15rem;
   display: block;
   user-select: none;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
@@ -183,8 +205,8 @@ h1 {
   font-size: 1rem;
 }
 
-.text-field:focus + .label-text,
-.text-field:not(:placeholder-shown) + .label-text {
+.text-field:focus+.label-text,
+.text-field:not(:placeholder-shown)+.label-text {
   top: 4px;
   font-size: 0.75rem;
   color: var(--md-sys-color-primary);
@@ -221,7 +243,7 @@ h1 {
 
 .filled-button:hover {
   background-color: var(--md-sys-color-primary-container);
-  color: var(--md-sys-color-on-primary-container); 
+  color: var(--md-sys-color-on-primary-container);
   box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.3);
 }
 
@@ -254,6 +276,39 @@ h1 {
   text-align: center;
   user-select: none;
   word-wrap: break-word;
+}
+
+.modal-success-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-success-content {
+  background: #fff;
+  border-radius: 14px;
+  padding: 2.2rem 2rem 1.5rem 2rem;
+  box-shadow: 0 8px 32px rgba(67, 160, 71, 0.13);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 270px;
+  max-width: 80vw;
+}
+
+.modal-success-text {
+  color: #2e7d32;
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-top: 1.1rem;
+  text-align: center;
 }
 
 @media (max-width: 400px) {

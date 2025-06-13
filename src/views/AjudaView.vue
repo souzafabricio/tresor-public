@@ -9,16 +9,21 @@
       </div>
 
       <p class="intro-text text-on-surface-variant">
-        Bem-vindo ao guia de ajuda do seu sistema financeiro! Aqui você encontrará informações sobre como utilizar cada funcionalidade para gerir as suas finanças de forma eficaz.
+        Bem-vindo ao guia de ajuda do seu sistema financeiro! Aqui você encontrará informações sobre como utilizar cada
+        funcionalidade para gerir as suas finanças de forma eficaz.
       </p>
 
       <div class="help-section">
         <h2 class="section-title"><span class="material-icons section-icon">trending_up</span> Lançamentos</h2>
         <p>Registre todas as suas entradas e saídas de dinheiro. Essencial para ter controle sobre cada transação.</p>
         <ul class="feature-list">
-          <li><strong>Adicionar Lançamento:</strong> Clique em "Adicionar Lançamento", preencha o nome, valor (use negativo para saídas), data, descrição e selecione uma categoria. Pode adicionar observações.</li>
-          <li><strong>Editar/Excluir:</strong> Clique num lançamento na lista para abrir o modo de edição. Aqui pode atualizar os dados ou excluí-lo permanentemente.</li>
-          <li><strong>Navegação Mensal:</strong> Utilize as setas no topo para navegar entre os meses e ver os lançamentos de períodos específicos.</li>
+          <li><strong>Adicionar Lançamento:</strong> Clique em "Adicionar Lançamento", preencha o nome, data, escolha o
+            botão vermelho com sinal de menos para saídas, e o botão verde com sinal de mais para entradas, descrição e
+            selecione uma categoria. Pode adicionar observações.</li>
+          <li><strong>Editar/Excluir:</strong> Clique num lançamento na lista para abrir o modo de edição. Aqui pode
+            atualizar os dados ou excluí-lo permanentemente.</li>
+          <li><strong>Navegação Mensal:</strong> Utilize as setas no topo para navegar entre os meses e ver os
+            lançamentos de períodos específicos.</li>
         </ul>
       </div>
 
@@ -26,10 +31,14 @@
         <h2 class="section-title"><span class="material-icons section-icon">dashboard</span> Dashboard</h2>
         <p>Tenha uma visão geral das suas finanças com resumos e gráficos interativos.</p>
         <ul class="feature-list">
-          <li><strong>Totais do Mês:</strong> Veja rapidamente o total das suas entradas, saídas e o saldo atual do mês.</li>
-          <li><strong>Meta de Gasto:</strong> Toque no valor da "Meta de Gasto" para editar e definir um limite mensal para as suas despesas. O sistema irá mostrar o quanto já gastou e o que resta.</li>
-          <li><strong>Gastos por Categoria:</strong> Visualize como o seu dinheiro está a ser distribuído entre as diferentes categorias.</li>
-          <li><strong>Evolução Mensal:</strong> O gráfico mostra a evolução das suas entradas e saídas nos últimos meses, ajudando-o(a) a identificar tendências.</li>
+          <li><strong>Totais do Mês:</strong> Veja rapidamente o total das suas entradas, saídas e o saldo atual do mês.
+          </li>
+          <li><strong>Meta de Gasto:</strong> Toque no valor da "Meta de Gasto" para editar e definir um limite mensal
+            para as suas despesas. O sistema irá mostrar o quanto já gastou e o que resta.</li>
+          <li><strong>Gastos por Categoria:</strong> Visualize como o seu dinheiro está a ser distribuído entre as
+            diferentes categorias.</li>
+          <li><strong>Evolução Mensal:</strong> O gráfico mostra a evolução das suas entradas e saídas nos últimos
+            meses, ajudando-o(a) a identificar tendências.</li>
         </ul>
       </div>
 
@@ -37,8 +46,10 @@
         <h2 class="section-title"><span class="material-icons section-icon">credit_card</span> Cartões</h2>
         <p>Registe e organize os seus cartões de crédito e débito.</p>
         <ul class="feature-list">
-          <li><strong>Cadastrar Novo Cartão:</strong> Adicione os dados do seu cartão, como banco, dia de fecho e dia de vencimento da fatura.</li>
-          <li><strong>Excluir Cartão:</strong> Ao excluir um cartão, note que todas as faturas e itens de fatura a ele relacionados serão permanentemente removidos.</li>
+          <li><strong>Cadastrar Novo Cartão:</strong> Adicione os dados do seu cartão, como banco, dia de fecho e dia de
+            vencimento da fatura.</li>
+          <li><strong>Excluir Cartão:</strong> Ao excluir um cartão, note que todas as faturas e itens de fatura a ele
+            relacionados serão permanentemente removidos.</li>
         </ul>
       </div>
 
@@ -47,17 +58,26 @@
         <p>Acompanhe e gira as suas faturas de cartão de crédito.</p>
         <ul class="feature-list">
           <li><strong>Listar Faturas:</strong> Veja todas as faturas associadas aos seus cartões.</li>
-          <li><strong>Gestão de Itens:</strong> Dentro de cada fatura, poderá adicionar, editar e excluir itens relacionados a compras e pagamentos.</li>
+          <li><strong>Gestão de Itens:</strong> Dentro de cada fatura, poderá adicionar, editar e excluir itens
+            relacionados a compras e pagamentos.</li>
           <li><strong>Status da Fatura:</strong> Acompanhe o valor total da fatura e o que já foi pago.</li>
         </ul>
       </div>
 
       <div class="help-section">
-        <h2 class="section-title"><span class="material-icons section-icon">info</span> Dicas Gerais</h2>
+        <h2 class="section-title"><span class="material-icons section-icon">analytics</span> Relatórios</h2>
+        <p>Explore a tela de Relatórios para ter uma análise mais aprofundada das suas finanças, ajudando a identificar
+          tendências e a tomar decisões financeiras mais inteligentes.</p>
         <ul class="feature-list">
-          <li><strong>Controle Diário:</strong> Registe os seus gastos assim que ocorrem para manter os seus dados sempre atualizados.</li>
-          <li><strong>Categorização:</strong> Use as categorias de forma consistente para obter insights precisos sobre os seus hábitos de consumo.</li>
-          <li><strong>Metas Realistas:</strong> Defina metas de gasto que sejam alcançáveis para se manter motivado(a).</li>
+          <li><strong>Relatório de Entradas e Saídas:</strong> Visualize o fluxo do seu dinheiro ao longo do tempo. Este
+            relatório mostra o total das suas entradas e saídas em períodos específicos, permitindo que você acompanhe
+            seu saldo e identifique meses de maior ou menor movimentação.</li>
+          <li><strong>Relatório de Gastos por Categoria:</strong> Entenda para onde seu dinheiro está indo. Este
+            relatório detalha suas despesas por categoria (por exemplo, alimentação, transporte, lazer), ajudando você a
+            ver onde você está gastando mais e a encontrar oportunidades para economizar.</li>
+          <li><strong>Relatório de Evolução Patrimonial:</strong> Acompanhe o crescimento do seu patrimônio. Este
+            relatório oferece uma visão da sua saúde financeira geral, mostrando como seus ativos e passivos evoluem ao
+            longo do tempo.</li>
         </ul>
       </div>
 
@@ -133,7 +153,7 @@ const voltar = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -143,7 +163,7 @@ const voltar = () => {
 
 .back-button:hover {
   background-color: var(--md-sys-color-surface-container);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .intro-text {
@@ -160,7 +180,7 @@ const voltar = () => {
   background-color: var(--md-sys-color-surface-container-low);
   padding: 16px;
   border-radius: 12px;
-  box-shadow: inset 0 0 8px rgba(0,0,0,0.03);
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.03);
 }
 
 .section-title {
@@ -249,7 +269,7 @@ const voltar = () => {
 }
 
 .back-to-home-button {
-    margin-top: 24px;
+  margin-top: 24px;
 }
 
 @media (max-width: 400px) {
@@ -264,7 +284,9 @@ const voltar = () => {
     font-size: 1.7rem;
   }
 
-  .intro-text, .help-section p, .feature-list li {
+  .intro-text,
+  .help-section p,
+  .feature-list li {
     font-size: 0.9rem;
   }
 }

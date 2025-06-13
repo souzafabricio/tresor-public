@@ -8,7 +8,6 @@
         </button>
         <h1 class="title">Seus Cartões</h1>
       </div>
-
       <div v-if="cartoes.length === 0" class="empty-state">
         <span class="material-icons empty-state-icon">credit_card_off</span>
         <p class="empty-state-text">
@@ -19,7 +18,6 @@
           Cadastrar Meu Primeiro Cartão
         </router-link>
       </div>
-
       <div v-else class="cartoes-list-container">
         <router-link to="/cadastrar-cartao" class="btn filled-button add-item-button list-add-button">
           <span class="material-icons">add_card</span>

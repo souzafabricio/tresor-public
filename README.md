@@ -19,7 +19,7 @@ Chart.js: Biblioteca de JavaScript simples e poderosa para a criação de gráfi
 Tailwind CSS: Um framework CSS "utility-first" que permite estilizar a aplicação de forma rápida e altamente personalizável, resultando em um design limpo e moderno.
 
 📱 Acesse e Teste!  
-https://tresor-xi.vercel.app  
+https://tresor-app.vercel.app  
 
 ❗Atenção  
 ❗Para uma melhor experiência, ao acessar pelo navegador de seu celular, clique para compartilhar e "Adicionar à Tela de Início".  

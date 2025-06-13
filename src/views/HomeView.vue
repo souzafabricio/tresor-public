@@ -121,14 +121,14 @@ onMounted(() => {
   max-width: 200px;
   height: auto;
   object-fit: contain;
-  margin-top: -40px;
+  margin-top: -55px;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
 }
 
 .welcome-message {
   font-size: 1.25rem;
   font-weight: 400;
-  margin-top: -60px;
+  margin-top: -50px;
   color: var(--md-sys-color-on-surface-variant);
   text-align: center;
 }

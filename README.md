@@ -30,24 +30,3 @@ Para configurar e executar o prj-financeiro em seu ambiente de desenvolvimento, 
 
 Pré-requisitos  
 Certifique-se de que você possui o Node.js (versão 14 ou superior é recomendada) e o npm (gerenciador de pacotes do Node.js) instalados em sua máquina.
-
-Para instalação  
-
-Clone o repositório para o seu ambiente local  
-  git clone https://github.com/souzafabricio/prj-financeiro.git
-  cd prj-financeiro  
-  
-Instale todas as dependências do projeto  
-    npm install  
-  
-Compilar e Hot-Reload para Desenvolvimento em servidor local  
-npm run serve  
-
-Compilar e Minificar para Produção  
-  npm run build  
-
-⚙️ Personalização da Configuração  
-Para detalhes sobre como ajustar as configurações específicas do Vue CLI para este projeto, consulte a Referência de Configuração.
-
-✉️ Contato  
-Desenvolvido por Fabrício de Souza Fonseca.
